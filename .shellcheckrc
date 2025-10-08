@@ -1,0 +1,18 @@
+# ShellCheck configuration for ccblocks
+
+# Set shell dialect (bash)
+shell=bash
+
+# Disable overly pedantic style checks
+disable=SC2250  # Prefer braces around variables (too noisy)
+disable=SC2292  # Prefer [[ ]] over [ ] (project uses [ ] consistently)
+disable=SC2310  # Function invocation in condition disables set -e (informational)
+disable=SC2312  # Consider invoking command separately (informational)
+disable=SC1091  # Not following sourced files (we know they exist)
+disable=SC2181  # Check exit code directly (intentional in some cases)
+disable=SC2126  # Consider using grep -c (style preference)
+
+# Keep important checks enabled (warnings)
+# SC2034 - Unused variables
+# SC2155 - Declare and assign separately
+# SC2207 - Prefer mapfile or read -a
