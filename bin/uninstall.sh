@@ -75,11 +75,74 @@ remove_scheduler() {
 
 	# Use helper to remove
 	if ! "$HELPER" remove; then
-		print_error "Failed to remove $SCHEDULER_NAME"
-		return 1
+		print_warning "Helper script failed, attempting direct cleanup..."
+		fallback_cleanup
+	fi
+
+	# Verify removal and do final cleanup if needed
+	if [ -f "$CONFIG_PATH" ]; then
+		print_warning "Scheduler files still present, performing final cleanup..."
+		fallback_cleanup
 	fi
 
 	print_status "$SCHEDULER_NAME removed successfully"
+}
+
+# Fallback cleanup - directly remove scheduler files if helper fails
+fallback_cleanup() {
+	if [[ "$OS_TYPE" == "Darwin" ]]; then
+		# macOS: Unload and remove LaunchAgent
+		local plist_path="$HOME/Library/LaunchAgents/ccblocks.plist"
+
+		if [ -f "$plist_path" ]; then
+			# Try to unload if loaded
+			local uid
+			uid=$(id -u)
+			if launchctl list | grep -w "ccblocks" >/dev/null; then
+				launchctl bootout "gui/$uid/ccblocks" 2>/dev/null || true
+			fi
+
+			# Remove plist file
+			rm -f "$plist_path"
+			print_status "Removed LaunchAgent plist: $plist_path"
+		fi
+
+	elif [[ "$OS_TYPE" == "Linux" ]]; then
+		# Linux: Disable/stop timer and remove systemd files
+		local service_file="$HOME/.config/systemd/user/ccblocks@.service"
+		local timer_file="$HOME/.config/systemd/user/ccblocks@.timer"
+
+		# Try to stop and disable timer
+		if systemctl --user is-active "ccblocks@default.timer" &>/dev/null; then
+			systemctl --user stop "ccblocks@default.timer" 2>/dev/null || true
+		fi
+
+		if systemctl --user is-enabled "ccblocks@default.timer" &>/dev/null; then
+			systemctl --user disable "ccblocks@default.timer" 2>/dev/null || true
+		fi
+
+		# Manually remove symlinks (they survive if systemctl can't reach D-Bus)
+		# Common in headless setups, SSH sessions, or when user session isn't properly set up
+		local timer_wants="$HOME/.config/systemd/user/timers.target.wants/ccblocks@default.timer"
+		local service_wants="$HOME/.config/systemd/user/default.target.wants/ccblocks@default.service"
+
+		if [ -L "$timer_wants" ] || [ -f "$timer_wants" ]; then
+			rm -f "$timer_wants"
+			print_status "Removed timer symlink from timers.target.wants/"
+		fi
+
+		if [ -L "$service_wants" ] || [ -f "$service_wants" ]; then
+			rm -f "$service_wants"
+			print_status "Removed service symlink from default.target.wants/"
+		fi
+
+		# Remove service and timer files
+		if [ -f "$service_file" ] || [ -f "$timer_file" ]; then
+			rm -f "$service_file" "$timer_file"
+			systemctl --user daemon-reload 2>/dev/null || true
+			print_status "Removed systemd service and timer files"
+		fi
+	fi
 }
 
 # Show config directory contents
