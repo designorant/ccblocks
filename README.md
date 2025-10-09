@@ -16,8 +16,8 @@ Scheduler for Claude CLI. Triggers 5-hour usage windows strategically throughout
 - Zero maintenance after setup
 
 **Example:**
-- **Without ccblocks:** Start coding at 9 AM → hit limits at 2 PM → locked out until 7 PM
-- **With ccblocks:** Trigger at 6 AM + 12 PM → code 9 AM to 6 PM → spans multiple blocks → more headroom
+- **Without ccblocks:** Start coding at 9 AM → hit limits at 10 AM → locked out until 2 PM
+- **With ccblocks:** Trigger at 6 AM → start coding at 9 AM → spans multiple blocks → more headroom
 
 **Token cost:** ~44-84 tokens/day
 
@@ -102,8 +102,17 @@ Each trigger sends 1 token and receives ~10-20 tokens. At 4 triggers/day ≈ 44-
 **Can I customise the schedule?**
 Yes! See [Configuration](#configuration) for preset schedules and custom schedule options.
 
-**Why not just use cron?**
-Claude CLI requires an authenticated user session. LaunchAgent (macOS) and systemd user services (Linux) run in your user session with full authentication.
+**Why not just use cron or a bash loop?**
+
+You *can* - many users successfully schedule triggers with:
+- **Cron**: Simple, but limited logging and error handling
+- **Bash loop**: Works in tmux/screen, but manual recovery if it dies
+
+ccblocks provides:
+- **Reliability**: Automatic restart, survives reboots
+- **Management**: Easy schedule changes, pause/resume, status monitoring
+- **Best practices**: OS-native service managers (LaunchAgent/systemd)
+- **Observability**: System logs, failure notifications
 
 ## Technical Details
 
