@@ -43,7 +43,9 @@ check_claude_cli() {
 
 	# Test Claude CLI (quick test)
 	local test_output=""
-	if ! test_output=$(run_with_timeout 10 bash -c 'printf "test" | claude' 2>&1); then
+	# Use echo with a single dot instead of printf "test" for better compatibility
+	# The Claude CLI may hang with certain input methods, so we use a simple dot
+	if ! test_output=$(echo "." | run_with_timeout 15 claude 2>&1); then
 		if echo "$test_output" | grep -qi "session limit reached"; then
 			print_warning "Claude CLI responded with a session limit message. Setup will continue, but scheduled triggers will wait until the limit resets."
 		else
