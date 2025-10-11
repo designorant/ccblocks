@@ -36,7 +36,7 @@ fi
 # Trigger new 5-hour block
 timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-if run_with_timeout 15 "$CLAUDE_BIN" < <(printf '.') >/dev/null 2>&1; then
+if echo "." | run_with_timeout 15 "$CLAUDE_BIN" >/dev/null 2>&1; then
 	# Save last activity timestamp
 	echo "$timestamp" >"$CCBLOCKS_CONFIG/.last-activity" 2>/dev/null || true
 
