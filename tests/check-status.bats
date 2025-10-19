@@ -6,7 +6,7 @@ load test_helper
 
 setup() {
     setup_test_dir
-    SCRIPT="${PROJECT_ROOT}/bin/status.sh"
+    SCRIPT="${PROJECT_ROOT}/libexec/bin/status.sh"
 
     # Override config directory to test directory
     export CCBLOCKS_CONFIG="${TEST_TEMP_DIR}/.config/ccblocks"
@@ -23,7 +23,7 @@ teardown() {
 
 # Helper function to create mock helper script
 create_mock_helper() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     # Determine which helper based on OS
@@ -60,7 +60,7 @@ EOF
 }
 
 restore_helper() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     if [[ "$(uname)" == "Darwin" ]]; then

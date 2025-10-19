@@ -15,13 +15,13 @@ test:
 	bats tests/*.bats
 
 lint:
-	@shellcheck ccblocks bin/*.sh lib/*.sh libexec/*.sh dev/*.sh
+	@shellcheck ccblocks libexec/ccblocks libexec/bin/*.sh libexec/lib/*.sh libexec/ccblocks-daemon.sh dev/*.sh
 
 format:
-	@shfmt -w -i 0 ccblocks bin/*.sh lib/*.sh libexec/*.sh dev/*.sh
+	@shfmt -w -i 0 ccblocks libexec/ccblocks libexec/bin/*.sh libexec/lib/*.sh libexec/ccblocks-daemon.sh dev/*.sh
 
 format-check:
-	@shfmt -d -i 0 ccblocks bin/*.sh lib/*.sh libexec/*.sh dev/*.sh
+	@shfmt -d -i 0 ccblocks libexec/ccblocks libexec/bin/*.sh libexec/lib/*.sh libexec/ccblocks-daemon.sh dev/*.sh
 
 validate: lint test
 

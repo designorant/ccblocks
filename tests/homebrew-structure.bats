@@ -21,18 +21,7 @@ teardown() {
 
 # Simulate Homebrew installation structure
 simulate_homebrew_install() {
-    # Copy lib directory into libexec
-    cp -r "${PROJECT_ROOT}/lib" "${BREW_PREFIX}/libexec/"
-
-    # Copy daemon to libexec
-    cp "${PROJECT_ROOT}/libexec/ccblocks-daemon.sh" "${BREW_PREFIX}/libexec/"
-
-    # Copy helper scripts to libexec/bin
-    cp -r "${PROJECT_ROOT}/bin" "${BREW_PREFIX}/libexec/"
-
-    # Copy VERSION and main executable
-    cp "${PROJECT_ROOT}/VERSION" "${BREW_PREFIX}/libexec/"
-    cp "${PROJECT_ROOT}/ccblocks" "${BREW_PREFIX}/libexec/"
+    cp -R "${PROJECT_RUNTIME_DIR}/." "${BREW_PREFIX}/libexec/"
 }
 
 @test "homebrew-structure: daemon can source common.sh from ../lib" {
@@ -108,7 +97,7 @@ simulate_homebrew_install() {
     # Create fresh test environment without calling simulate_homebrew_install
     # Deliberately install lib in wrong location (inside libexec)
     rm -rf "${BREW_PREFIX}/libexec/lib"  # Remove if exists from previous tests
-    cp -r "${PROJECT_ROOT}/lib" "${BREW_PREFIX}/"
+    cp -r "${PROJECT_ROOT}/libexec/lib" "${BREW_PREFIX}/"
     cp "${PROJECT_ROOT}/libexec/ccblocks-daemon.sh" "${BREW_PREFIX}/libexec/"
 
     # lib should NOT be inside libexec in this test

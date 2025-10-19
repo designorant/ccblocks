@@ -6,7 +6,7 @@ load test_helper
 
 setup() {
     setup_test_dir
-    SCRIPT="${PROJECT_ROOT}/bin/schedule.sh"
+    SCRIPT="${PROJECT_ROOT}/libexec/bin/schedule.sh"
 
     # Create mock helper for integration tests
     create_mock_helper
@@ -19,7 +19,7 @@ teardown() {
 
 # Helper functions for mocking
 create_mock_helper() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     if [[ "$(uname)" == "Darwin" ]]; then
@@ -66,7 +66,7 @@ EOF
 }
 
 restore_mock_helper() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     if [[ "$(uname)" == "Darwin" ]]; then

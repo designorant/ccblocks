@@ -40,7 +40,7 @@ EOF
     chmod +x "${TEST_TEMP_DIR}/test_os_detect.sh"
 
     # Link to lib directory for sourcing
-    ln -s "${PROJECT_ROOT}/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
+    ln -s "${PROJECT_ROOT}/libexec/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
 
     run "${TEST_TEMP_DIR}/test_os_detect.sh"
     assert_failure
@@ -60,7 +60,7 @@ init_os_vars "$SCRIPT_DIR"
 EOF
     chmod +x "${TEST_TEMP_DIR}/test_init_no_os.sh"
 
-    ln -s "${PROJECT_ROOT}/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
+    ln -s "${PROJECT_ROOT}/libexec/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
 
     run "${TEST_TEMP_DIR}/test_init_no_os.sh"
     assert_failure
@@ -79,7 +79,7 @@ init_os_vars
 EOF
     chmod +x "${TEST_TEMP_DIR}/test_init_no_param.sh"
 
-    ln -s "${PROJECT_ROOT}/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
+    ln -s "${PROJECT_ROOT}/libexec/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
 
     run "${TEST_TEMP_DIR}/test_init_no_param.sh"
     assert_failure
@@ -111,7 +111,7 @@ run_with_timeout 1 echo "perl fallback works"
 EOF
     chmod +x "${TEST_TEMP_DIR}/test_timeout_perl.sh"
 
-    ln -s "${PROJECT_ROOT}/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
+    ln -s "${PROJECT_ROOT}/libexec/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
 
     run "${TEST_TEMP_DIR}/test_timeout_perl.sh"
     assert_success
@@ -142,7 +142,7 @@ run_with_timeout 1 echo "python3 fallback works"
 EOF
     chmod +x "${TEST_TEMP_DIR}/test_timeout_python.sh"
 
-    ln -s "${PROJECT_ROOT}/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
+    ln -s "${PROJECT_ROOT}/libexec/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
 
     run "${TEST_TEMP_DIR}/test_timeout_python.sh"
     assert_success
@@ -172,7 +172,7 @@ run_with_timeout 1 echo "no timeout available"
 EOF
     chmod +x "${TEST_TEMP_DIR}/test_timeout_none.sh"
 
-    ln -s "${PROJECT_ROOT}/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
+    ln -s "${PROJECT_ROOT}/libexec/lib" "${TEST_TEMP_DIR}/../lib" 2>/dev/null || true
 
     run "${TEST_TEMP_DIR}/test_timeout_none.sh"
     assert_success
@@ -191,7 +191,7 @@ EOF
     # Create mock helper
     create_mock_helper_for_status
 
-    run "${PROJECT_ROOT}/bin/status.sh"
+    run "${PROJECT_ROOT}/libexec/bin/status.sh"
     restore_helper_for_status
     assert_success
     # Should handle empty file gracefully
@@ -221,7 +221,7 @@ EOF
 }
 
 @test "schedule-blocks apply rejects invalid schedule name" {
-    run "${PROJECT_ROOT}/bin/schedule.sh" apply invalid-schedule-name
+    run "${PROJECT_ROOT}/libexec/bin/schedule.sh" apply invalid-schedule-name
     # Should fail with error or show available schedules
     assert_failure
     # Should mention the invalid schedule or show help
@@ -230,7 +230,7 @@ EOF
 
 # Helper function to create mock helper for check-status tests
 create_mock_helper_for_status() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     if [[ "$(uname)" == "Darwin" ]]; then
@@ -262,7 +262,7 @@ EOF
 }
 
 restore_helper_for_status() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     if [[ "$(uname)" == "Darwin" ]]; then
@@ -319,7 +319,7 @@ EOF
     create_mock_helper_for_uninstall
 
     # Run with force mode to skip prompts
-    run "${PROJECT_ROOT}/bin/uninstall.sh" --force
+    run "${PROJECT_ROOT}/libexec/bin/uninstall.sh" --force
     restore_helper_for_uninstall
 
     # Should complete successfully
@@ -327,7 +327,7 @@ EOF
 }
 
 create_mock_helper_for_uninstall() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     if [[ "$(uname)" == "Darwin" ]]; then
@@ -358,7 +358,7 @@ EOF
 }
 
 restore_helper_for_uninstall() {
-    local helper_dir="${PROJECT_ROOT}/lib"
+    local helper_dir="${PROJECT_ROOT}/libexec/lib"
     local helper_name
 
     if [[ "$(uname)" == "Darwin" ]]; then

@@ -22,6 +22,9 @@ load "${BATS_LIB_PREFIX}/lib/bats-assert/load.bash"
 
 # Get the root directory of the project
 PROJECT_ROOT="$(cd "${BATS_TEST_DIRNAME}/.." && pwd)"
+PROJECT_RUNTIME_DIR="${PROJECT_ROOT}/libexec"
+PROJECT_BIN_DIR="${PROJECT_RUNTIME_DIR}/bin"
+PROJECT_LIB_DIR="${PROJECT_RUNTIME_DIR}/lib"
 
 # Test-specific temporary directory
 setup_test_dir() {
@@ -51,8 +54,8 @@ mock_command() {
         mkdir -p "${MOCK_BIN_DIR}"
 
         # Copy lib directory to mock bin for scripts that need it
-        if [ -d "${PROJECT_ROOT}/lib" ]; then
-            cp -r "${PROJECT_ROOT}/lib" "${MOCK_BIN_DIR}/"
+        if [ -d "${PROJECT_ROOT}/libexec/lib" ]; then
+            cp -r "${PROJECT_ROOT}/libexec/lib" "${MOCK_BIN_DIR}/"
         fi
 
         export PATH="${MOCK_BIN_DIR}:${PATH}"

@@ -16,7 +16,10 @@ source "$SCRIPT_DIR/common.sh"
 SERVICE_NAME="ccblocks"
 SERVICE_FILE="$HOME/.config/systemd/user/${SERVICE_NAME}@.service"
 TIMER_FILE="$HOME/.config/systemd/user/${SERVICE_NAME}@.timer"
-TRIGGER_SCRIPT="$SCRIPT_DIR/../libexec/ccblocks-daemon.sh"
+TRIGGER_SCRIPT="$SCRIPT_DIR/../ccblocks-daemon.sh"
+if [ ! -f "$TRIGGER_SCRIPT" ]; then
+	TRIGGER_SCRIPT="$SCRIPT_DIR/../libexec/ccblocks-daemon.sh"
+fi
 
 # Check if service exists
 service_exists() {

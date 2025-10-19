@@ -7,17 +7,18 @@ load test_helper
 setup() {
     setup_test_dir
     SCRIPT="${PROJECT_ROOT}/ccblocks"
+    BIN_DIR="${PROJECT_BIN_DIR}"
 
     # Backup bin directory to prevent test corruption
     BIN_BACKUP="${BATS_TEST_TMPDIR}/bin_backup"
-    cp -R "${PROJECT_ROOT}/bin" "$BIN_BACKUP"
+    cp -R "${BIN_DIR}" "$BIN_BACKUP"
 }
 
 teardown() {
     # Always restore bin directory from backup
     if [ -d "$BIN_BACKUP" ]; then
-        rm -rf "${PROJECT_ROOT}/bin"
-        cp -R "$BIN_BACKUP" "${PROJECT_ROOT}/bin"
+        rm -rf "${BIN_DIR}"
+        cp -R "$BIN_BACKUP" "${BIN_DIR}"
     fi
 
     teardown_test_dir
@@ -62,12 +63,12 @@ teardown() {
 # Command routing tests - setup
 @test "ccblocks routes setup command to setup" {
     # Create a mock setup in bin/ (teardown will restore)
-    cat > "${PROJECT_ROOT}/bin/setup.sh" << 'EOF'
+    cat > "${BIN_DIR}/setup.sh" << 'EOF'
 #!/bin/bash
 echo "setup was called with: $@"
 exit 0
 EOF
-    chmod +x "${PROJECT_ROOT}/bin/setup.sh"
+    chmod +x "${BIN_DIR}/setup.sh"
 
     run "$SCRIPT" setup --test-arg
     assert_success
@@ -77,12 +78,12 @@ EOF
 # Command routing tests - status
 @test "ccblocks routes status command to check-status" {
     # Create a mock status in bin/ (teardown will restore)
-    cat > "${PROJECT_ROOT}/bin/status.sh" << 'EOF'
+    cat > "${BIN_DIR}/status.sh" << 'EOF'
 #!/bin/bash
 echo "check-status was called"
 exit 0
 EOF
-    chmod +x "${PROJECT_ROOT}/bin/status.sh"
+    chmod +x "${BIN_DIR}/status.sh"
 
     run "$SCRIPT" status
     assert_success
@@ -92,12 +93,12 @@ EOF
 # Command routing tests - schedule
 @test "ccblocks routes schedule command to schedule-blocks" {
     # Create a mock schedule in bin/ (teardown will restore)
-    cat > "${PROJECT_ROOT}/bin/schedule.sh" << 'EOF'
+    cat > "${BIN_DIR}/schedule.sh" << 'EOF'
 #!/bin/bash
 echo "schedule-blocks was called with: $@"
 exit 0
 EOF
-    chmod +x "${PROJECT_ROOT}/bin/schedule.sh"
+    chmod +x "${BIN_DIR}/schedule.sh"
 
     run "$SCRIPT" schedule list
     assert_success
@@ -107,12 +108,12 @@ EOF
 # Command tests - pause
 @test "ccblocks pause routes to schedule-blocks pause" {
     # Create a mock schedule in bin/ (teardown will restore)
-    cat > "${PROJECT_ROOT}/bin/schedule.sh" << 'EOF'
+    cat > "${BIN_DIR}/schedule.sh" << 'EOF'
 #!/bin/bash
 echo "Received: $1"
 exit 0
 EOF
-    chmod +x "${PROJECT_ROOT}/bin/schedule.sh"
+    chmod +x "${BIN_DIR}/schedule.sh"
 
     run "$SCRIPT" pause
     assert_success
@@ -122,12 +123,12 @@ EOF
 # Command alias tests - resume/unpause
 @test "ccblocks resume routes to schedule-blocks resume" {
     # Create a mock schedule in bin/ (teardown will restore)
-    cat > "${PROJECT_ROOT}/bin/schedule.sh" << 'EOF'
+    cat > "${BIN_DIR}/schedule.sh" << 'EOF'
 #!/bin/bash
 echo "Received: $1"
 exit 0
 EOF
-    chmod +x "${PROJECT_ROOT}/bin/schedule.sh"
+    chmod +x "${BIN_DIR}/schedule.sh"
 
     run "$SCRIPT" resume
     assert_success
@@ -136,12 +137,12 @@ EOF
 
 @test "ccblocks unpause routes to schedule-blocks resume" {
     # Create a mock schedule in bin/ (teardown will restore)
-    cat > "${PROJECT_ROOT}/bin/schedule.sh" << 'EOF'
+    cat > "${BIN_DIR}/schedule.sh" << 'EOF'
 #!/bin/bash
 echo "Received: $1"
 exit 0
 EOF
-    chmod +x "${PROJECT_ROOT}/bin/schedule.sh"
+    chmod +x "${BIN_DIR}/schedule.sh"
 
     run "$SCRIPT" unpause
     assert_success
@@ -151,12 +152,12 @@ EOF
 # Command routing tests - uninstall
 @test "ccblocks routes uninstall command to uninstall" {
     # Create a mock uninstall in bin/ (teardown will restore)
-    cat > "${PROJECT_ROOT}/bin/uninstall.sh" << 'EOF'
+    cat > "${BIN_DIR}/uninstall.sh" << 'EOF'
 #!/bin/bash
 echo "uninstall was called"
 exit 0
 EOF
-    chmod +x "${PROJECT_ROOT}/bin/uninstall.sh"
+    chmod +x "${BIN_DIR}/uninstall.sh"
 
     run "$SCRIPT" uninstall
     assert_success

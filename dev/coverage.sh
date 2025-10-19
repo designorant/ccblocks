@@ -8,6 +8,9 @@ set -euo pipefail
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+RUNTIME_DIR="$PROJECT_ROOT/libexec"
+BIN_DIR="$RUNTIME_DIR/bin"
+LIB_DIR="$RUNTIME_DIR/lib"
 
 # Detect OS for find compatibility
 OS_TYPE="$(uname -s)"
@@ -46,8 +49,8 @@ count_scripts() {
 	local script_count=0
 	# Count executables in bin/ (no extension) + helpers in lib/ (.sh extension)
 	local bin_count lib_count
-	bin_count=$(find "$PROJECT_ROOT/bin" -type f -perm "$PERM_FLAG" ! -name "*.log" | wc -l | tr -d ' ')
-	lib_count=$(find "$PROJECT_ROOT/lib" -name "*.sh" -type f | wc -l | tr -d ' ')
+	bin_count=$(find "$BIN_DIR" -type f -perm "$PERM_FLAG" ! -name "*.log" | wc -l | tr -d ' ')
+	lib_count=$(find "$LIB_DIR" -name "*.sh" -type f | wc -l | tr -d ' ')
 	script_count=$((bin_count + lib_count))
 	echo "$script_count"
 }
@@ -57,8 +60,8 @@ count_lines() {
 	local line_count=0
 	# Count lines in bin/ executables and lib/ helpers, excluding comments and blank lines
 	line_count=$({
-		find "$PROJECT_ROOT/bin" -type f -perm "$PERM_FLAG" ! -name "*.log" -exec cat {} \;
-		find "$PROJECT_ROOT/lib" -name "*.sh" -type f -exec cat {} \;
+		find "$BIN_DIR" -type f -perm "$PERM_FLAG" ! -name "*.log" -exec cat {} \;
+		find "$LIB_DIR" -name "*.sh" -type f -exec cat {} \;
 	} | grep -v '^\s*#' | grep -v '^\s*$' | wc -l | tr -d ' ')
 	echo "$line_count"
 }
@@ -68,8 +71,8 @@ count_functions() {
 	local func_count=0
 	# Find function definitions (name() { or function name {)
 	func_count=$({
-		find "$PROJECT_ROOT/bin" -type f -perm "$PERM_FLAG" ! -name "*.log" -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
-		find "$PROJECT_ROOT/lib" -name "*.sh" -type f -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
+		find "$BIN_DIR" -type f -perm "$PERM_FLAG" ! -name "*.log" -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
+		find "$LIB_DIR" -name "*.sh" -type f -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
 	} | sed 's/\s*().*$//' | sed 's/^\s*//' | sort -u | wc -l | tr -d ' ')
 	echo "$func_count"
 }
@@ -77,8 +80,8 @@ count_functions() {
 # List all function names
 list_functions() {
 	{
-		find "$PROJECT_ROOT/bin" -type f -perm "$PERM_FLAG" ! -name "*.log" -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
-		find "$PROJECT_ROOT/lib" -name "*.sh" -type f -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
+		find "$BIN_DIR" -type f -perm "$PERM_FLAG" ! -name "*.log" -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
+		find "$LIB_DIR" -name "*.sh" -type f -exec grep -h '^\s*[a-z_][a-z0-9_]*\s*()' {} \;
 	} | sed 's/\s*().*$//' | sed 's/^\s*//' | sort -u
 }
 
@@ -118,7 +121,7 @@ analyze_script_coverage() {
 		else
 			print_warning "$script_name (no test file)"
 		fi
-	done < <(find "$PROJECT_ROOT/bin" -type f -perm "$PERM_FLAG" ! -name "*.log" | sort)
+	done < <(find "$BIN_DIR" -type f -perm "$PERM_FLAG" ! -name "*.log" | sort)
 
 	echo ""
 	local coverage_pct=0

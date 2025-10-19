@@ -13,7 +13,7 @@ setup() {
     mkdir -p "$CCBLOCKS_CONFIG"
 
     # Source common library
-    source "$PROJECT_ROOT/lib/common.sh"
+    source "$PROJECT_LIB_DIR/common.sh"
 }
 
 teardown() {
