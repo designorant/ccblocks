@@ -31,57 +31,70 @@ The simplest way to test ccblocks locally is to run it directly from the reposit
 ./ccblocks help
 ```
 
-### Testing with Homebrew
+### Testing with Homebrew (Two-Repo Workflow)
 
-#### Setup: Point Homebrew to Your Local Tap
-
-**First time setup** - Make Homebrew use your local tap clone instead of managing its own:
+The following steps are generic and work for all contributors. They assume you have both repositories cloned locally:
 
 ```bash
-# If you already have the tap installed, remove it
-brew untap designorant/tap
+# Clone the repositories
+git clone git@github.com:designorant/ccblocks.git
+git clone git@github.com:designorant/homebrew-tap.git
 
-# Symlink your working directory to where Homebrew expects the tap
-ln -s ~/path/to/your/homebrew-tap /opt/homebrew/Library/Taps/designorant/homebrew-tap
-
-# Verify it worked
-ls -la /opt/homebrew/Library/Taps/designorant/homebrew-tap
-# Should show: homebrew-tap -> /path/to/your/homebrew-tap
+# Point these variables at your clones (use absolute paths)
+export CCBLOCKS_DIR="/absolute/path/to/ccblocks"
+export TAP_DIR="/absolute/path/to/homebrew-tap"
 ```
 
-Now Homebrew reads directly from your working directory. Any formula changes are immediately available.
+There are two recommended approaches:
 
-#### Testing Formula Changes
+1) Local Tap Linking (recommended during formula edits)
 
 ```bash
-# 1. In ccblocks repo: Make your code changes
-cd ~/path/to/ccblocks
+# Make Homebrew read from your local tap clone
+brew untap designorant/tap 2>/dev/null || true
 
-# 2. Create a test tarball
-git archive --format=tar.gz --prefix=ccblocks-test/ HEAD > /tmp/ccblocks-test.tar.gz
-shasum -a 256 /tmp/ccblocks-test.tar.gz
+# Determine where Homebrew keeps taps (works on macOS and Linux)
+export TAP_PATH="$(brew --repository)/Library/Taps/designorant/homebrew-tap"
+mkdir -p "$(dirname "$TAP_PATH")"
+ln -sfn "$TAP_DIR" "$TAP_PATH"
 
-# 3. In your homebrew-tap repo: Update the formula temporarily
-cd ~/path/to/homebrew-tap
-# Edit Formula/ccblocks.rb:
-#   url "file:///tmp/ccblocks-test.tar.gz"
-#   sha256 "..." # paste the shasum output
+# Verify
+ls -la "$TAP_PATH"
+```
 
-# 4. Test installation (--build-from-source runs the install steps)
+2) Temporary Local Tarball (no tap link needed)
+
+```bash
+# Build a tarball from your ccblocks working tree
+git -C "$CCBLOCKS_DIR" archive --format=tar.gz --prefix=ccblocks-test/ HEAD > /tmp/ccblocks-test.tar.gz
+
+# Compute SHA-256 (pick one that exists on your system)
+openssl dgst -sha256 /tmp/ccblocks-test.tar.gz | awk '{print $2}'
+# or: shasum -a 256 /tmp/ccblocks-test.tar.gz | awk '{print $1}'   # macOS
+# or: sha256sum /tmp/ccblocks-test.tar.gz | awk '{print $1}'       # Linux
+
+# Edit your local formula in the tap repo temporarily
+#   File: $TAP_DIR/Formula/ccblocks.rb
+#   Set:  url "file:///tmp/ccblocks-test.tar.gz"
+#         sha256 "<PASTE_SHA256_HERE>"
+```
+
+#### Installing and Testing the Formula
+
+```bash
+# Clean reinstall from your local tap/formula
 brew uninstall ccblocks 2>/dev/null || true
 brew install --build-from-source designorant/tap/ccblocks
 
-# 5. Verify it works
+# Basic verification
 ccblocks --version
 brew test designorant/tap/ccblocks
 
-# 6. Revert the formula URL before committing
-git checkout Formula/ccblocks.rb
+# After testing, revert the temporary URL/SHA change before committing
+git -C "$TAP_DIR" checkout -- Formula/ccblocks.rb
 ```
 
-#### Quick Install Test
-
-To test the normal user installation experience:
+#### Quick Install Test (no local changes)
 
 ```bash
 brew install designorant/tap/ccblocks
@@ -104,8 +117,9 @@ If you need to test installation paths (for Homebrew):
 brew --prefix
 
 # The formula installs to:
-# - bin/ccblocks → $(brew --prefix)/bin/ccblocks
-# - Supporting files → $(brew --prefix)/Cellar/ccblocks/VERSION/libexec/
+# - bin/ccblocks → $(brew --prefix)/bin/ccblocks (wrapper script)
+# - Runtime payload → $(brew --prefix)/Cellar/ccblocks/VERSION/libexec/
+#   (ccblocks, bin/, lib/, ccblocks-daemon.sh, VERSION)
 ```
 
 ## Running Tests
@@ -172,15 +186,16 @@ ccblocks/
 
 ### Key Files
 
-- **ccblocks** - Main CLI dispatcher, routes commands to bin/ scripts
-- **bin/setup** - Handles initial installation and configuration
-- **bin/schedule** - Manages schedule patterns (247, work, night, custom)
+- **ccblocks** - Thin wrapper that execs `libexec/ccblocks` for local development
+- **libexec/ccblocks** - Main CLI dispatcher, routes commands to `libexec/bin/` scripts
+- **libexec/bin/setup.sh** - Handles initial installation and configuration
+- **libexec/bin/schedule.sh** - Manages schedule patterns (247, work, night, custom)
+- **libexec/bin/status.sh** - Status dashboard with schedule and activity
+- **libexec/bin/uninstall.sh** - Safe removal with config preservation options
 - **libexec/ccblocks-daemon.sh** - Executes the Claude CLI trigger (`printf '.' | claude`)
-- **bin/status** - Status dashboard with schedule and activity
-- **bin/uninstall** - Safe removal with config preservation options
 - **dev/coverage.sh** - Test coverage analysis and reporting tool
-- **lib/launchagent-helper.sh** / **lib/systemd-helper.sh** - Platform-specific scheduler management
-- **lib/common.sh** - Shared functions for OS detection, logging, error handling, validation
+- **libexec/lib/launchagent-helper.sh** / **libexec/lib/systemd-helper.sh** - Platform-specific scheduler management
+- **libexec/lib/common.sh** - Shared functions for OS detection, logging, error handling, validation
 
 ## Code Conventions
 

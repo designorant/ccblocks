@@ -3,7 +3,15 @@
 [![CI](https://github.com/designorant/ccblocks/actions/workflows/test.yml/badge.svg)](https://github.com/designorant/ccblocks/actions/workflows/test.yml)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)](README.md#platform-support)
 
-Scheduler for Claude CLI. Triggers 5-hour usage windows strategically throughout the day.
+```sh
+░░      ░░░      ░░       ░░  ░░░░░░░      ░░░      ░░  ░░░░  ░░      ░░
+▒  ▒▒▒▒  ▒  ▒▒▒▒  ▒  ▒▒▒▒  ▒  ▒▒▒▒▒▒  ▒▒▒▒  ▒  ▒▒▒▒  ▒  ▒▒▒  ▒▒  ▒▒▒▒▒▒▒
+▓  ▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓       ▓▓  ▓▓▓▓▓▓  ▓▓▓▓  ▓  ▓▓▓▓▓▓▓     ▓▓▓▓▓      ▓▓
+█  ████  █  ████  █  ████  █  ██████  ████  █  ████  █  ███  ████████  █
+██      ███      ██       ██       ██      ███      ██  ████  ██      ██
+```
+
+Time-shift Claude sessions to match your working hours
 
 ---
 

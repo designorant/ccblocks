@@ -60,6 +60,8 @@ show_logo() {
 	echo "█  ████  █  ████  █  ████  █  ██████  ████  █  ████  █  ███  ████████  █"
 	echo "██      ███      ██       ██       ██      ███      ██  ████  ██      ██"
 	echo "                                                         by @designorant"
+	echo ""
+	echo "Time-shift Claude sessions to match your working hours"
 }
 
 # Get script directory (must be set by calling script before sourcing this)
