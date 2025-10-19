@@ -10,8 +10,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source common library
-# shellcheck source=../lib/common.sh
-source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=lib/common.sh
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+	source "$SCRIPT_DIR/lib/common.sh"
+else
+	source "$SCRIPT_DIR/../lib/common.sh"
+fi
 
 # Ensure config directory exists
 mkdir -p "$CCBLOCKS_CONFIG" 2>/dev/null || true
