@@ -16,7 +16,15 @@ SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
 # Source common library
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/lib/common.sh"
+# Handle both direct installation and Homebrew structure
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+	source "$SCRIPT_DIR/lib/common.sh"
+elif [ -f "$SCRIPT_DIR/../lib/common.sh" ]; then
+	source "$SCRIPT_DIR/../lib/common.sh"
+else
+	echo "Error: Could not find common.sh library" >&2
+	exit 1
+fi
 
 # Show usage
 show_usage() {
