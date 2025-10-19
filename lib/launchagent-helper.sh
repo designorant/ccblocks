@@ -20,6 +20,9 @@ PLIST_PATH="$HOME/Library/LaunchAgents/ccblocks.plist"
 # If installed via Homebrew, paths contain /Cellar/ccblocks/VERSION/ which breaks on upgrade
 # Replace with /opt/ccblocks/ symlink which always points to current version
 TRIGGER_SCRIPT="$SCRIPT_DIR/../libexec/ccblocks-daemon.sh"
+if [ ! -f "$TRIGGER_SCRIPT" ]; then
+	TRIGGER_SCRIPT="$SCRIPT_DIR/../ccblocks-daemon.sh"
+fi
 if [[ "$TRIGGER_SCRIPT" == */Cellar/ccblocks/* ]]; then
 	# Extract brew prefix (everything before /Cellar/)
 	BREW_PREFIX="${TRIGGER_SCRIPT%%/Cellar/ccblocks/*}"
