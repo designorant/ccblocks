@@ -27,7 +27,7 @@ if [[ "$TRIGGER_SCRIPT" == */Cellar/ccblocks/* ]]; then
 	# Extract brew prefix (everything before /Cellar/)
 	BREW_PREFIX="${TRIGGER_SCRIPT%%/Cellar/ccblocks/*}"
 	# Preserve relative path after the versioned Cellar segment
-	RELATIVE_PATH="${TRIGGER_SCRIPT#${BREW_PREFIX}/Cellar/ccblocks/}"
+	RELATIVE_PATH="${TRIGGER_SCRIPT#"${BREW_PREFIX}"/Cellar/ccblocks/}"
 	RELATIVE_PATH="${RELATIVE_PATH#*/}" # drop version component
 	# Use opt symlink instead of versioned Cellar path
 	TRIGGER_SCRIPT="$BREW_PREFIX/opt/ccblocks/${RELATIVE_PATH}"
