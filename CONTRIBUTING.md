@@ -129,6 +129,8 @@ ccblocks uses [Bats](https://github.com/bats-core/bats-core) (Bash Automated Tes
 ```bash
 # Run all tests
 make test
+# (If your environment has a read-only /tmp, set BATS_TMPDIR to a writable path)
+# BATS_TMPDIR="$(pwd)/.tmp_bats" make test
 
 # Run specific test file
 bats tests/ccblocks.bats        # Test main CLI
@@ -160,18 +162,19 @@ make lint
 
 ```
 ccblocks/
-├── ccblocks                    # Main CLI entry point
-├── bin/                        # Executable scripts
-│   ├── setup.sh                # Initial setup script
-│   ├── schedule.sh             # Schedule management
-│   ├── status.sh               # Status reporting
-│   └── uninstall.sh            # Cleanup script
-├── libexec/                    # Internal executables
-│   └── ccblocks-daemon.sh      # Block trigger logic
-├── lib/                        # Shared libraries
-│   ├── common.sh               # Shared utilities and functions
-│   ├── launchagent-helper.sh   # macOS LaunchAgent management
-│   └── systemd-helper.sh       # Linux systemd management
+├── ccblocks                    # Thin wrapper to libexec/ccblocks for ./ccblocks
+├── libexec/                    # Runtime payload (mirrors Homebrew install)
+│   ├── ccblocks                # Main CLI entry point
+│   ├── ccblocks-daemon.sh      # Block trigger logic
+│   ├── bin/                    # Executable subcommands
+│   │   ├── setup.sh            # Initial setup script
+│   │   ├── schedule.sh         # Schedule management
+│   │   ├── status.sh           # Status reporting
+│   │   └── uninstall.sh        # Cleanup script
+│   └── lib/                    # Shared libraries
+│       ├── common.sh           # Shared utilities and functions
+│       ├── launchagent-helper.sh # macOS LaunchAgent management
+│       └── systemd-helper.sh   # Linux systemd management
 ├── dev/                        # Development tools
 │   └── coverage.sh             # Test coverage analysis
 └── tests/                      # Bats test files

@@ -99,6 +99,8 @@ main() {
 		# Fallback to VERSION file for development/non-Homebrew installations
 		if [ "$VERSION" = "__VERSION__" ] && [ -f "$SCRIPT_DIR/VERSION" ]; then
 			VERSION=$(tr -d '\n\r' <"$SCRIPT_DIR/VERSION")
+		elif [ "$VERSION" = "__VERSION__" ] && [ -f "$SCRIPT_DIR/../VERSION" ]; then
+			VERSION=$(tr -d '\n\r' <"$SCRIPT_DIR/../VERSION")
 		elif [ "$VERSION" = "__VERSION__" ]; then
 			VERSION="unknown"
 		fi
