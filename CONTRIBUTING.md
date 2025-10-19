@@ -33,14 +33,59 @@ The simplest way to test ccblocks locally is to run it directly from the reposit
 
 ### Testing with Homebrew
 
-To test the actual Homebrew installation experience from your tap:
+#### Setup: Point Homebrew to Your Local Tap
+
+**First time setup** - Make Homebrew use your local tap clone instead of managing its own:
 
 ```bash
-# Test from your tap
-brew install --HEAD designorant/tap/ccblocks
+# If you already have the tap installed, remove it
+brew untap designorant/tap
 
-# After making changes, reinstall
-brew reinstall --HEAD designorant/tap/ccblocks
+# Symlink your working directory to where Homebrew expects the tap
+ln -s ~/path/to/your/homebrew-tap /opt/homebrew/Library/Taps/designorant/homebrew-tap
+
+# Verify it worked
+ls -la /opt/homebrew/Library/Taps/designorant/homebrew-tap
+# Should show: homebrew-tap -> /path/to/your/homebrew-tap
+```
+
+Now Homebrew reads directly from your working directory. Any formula changes are immediately available.
+
+#### Testing Formula Changes
+
+```bash
+# 1. In ccblocks repo: Make your code changes
+cd ~/path/to/ccblocks
+
+# 2. Create a test tarball
+git archive --format=tar.gz --prefix=ccblocks-test/ HEAD > /tmp/ccblocks-test.tar.gz
+shasum -a 256 /tmp/ccblocks-test.tar.gz
+
+# 3. In your homebrew-tap repo: Update the formula temporarily
+cd ~/path/to/homebrew-tap
+# Edit Formula/ccblocks.rb:
+#   url "file:///tmp/ccblocks-test.tar.gz"
+#   sha256 "..." # paste the shasum output
+
+# 4. Test installation (--build-from-source runs the install steps)
+brew uninstall ccblocks 2>/dev/null || true
+brew install --build-from-source designorant/tap/ccblocks
+
+# 5. Verify it works
+ccblocks --version
+brew test designorant/tap/ccblocks
+
+# 6. Revert the formula URL before committing
+git checkout Formula/ccblocks.rb
+```
+
+#### Quick Install Test
+
+To test the normal user installation experience:
+
+```bash
+brew install designorant/tap/ccblocks
+brew test designorant/tap/ccblocks
 ```
 
 ### Development Workflow
