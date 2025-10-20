@@ -133,6 +133,7 @@ restore_helper() {
     assert_success
     assert_output --partial "log show"
     assert_output --partial "predicate"
+    assert_output --partial "eventMessage"
 }
 
 @test "check-status shows platform-specific log command (Linux)" {

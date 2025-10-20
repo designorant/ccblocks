@@ -19,9 +19,10 @@ PLIST_PATH="$HOME/Library/LaunchAgents/ccblocks.plist"
 # Resolve TRIGGER_SCRIPT path - use version-independent path for Homebrew
 # If installed via Homebrew, paths contain /Cellar/ccblocks/VERSION/ which breaks on upgrade
 # Replace with /opt/ccblocks/ symlink which always points to current version
-TRIGGER_SCRIPT="$SCRIPT_DIR/../ccblocks-daemon.sh"
+BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+TRIGGER_SCRIPT="$BASE_DIR/ccblocks-daemon.sh"
 if [ ! -f "$TRIGGER_SCRIPT" ]; then
-	TRIGGER_SCRIPT="$SCRIPT_DIR/../libexec/ccblocks-daemon.sh"
+	TRIGGER_SCRIPT="$BASE_DIR/libexec/ccblocks-daemon.sh"
 fi
 if [[ "$TRIGGER_SCRIPT" == */Cellar/ccblocks/* ]]; then
 	# Extract brew prefix (everything before /Cellar/)
@@ -294,7 +295,7 @@ status_agent() {
 
 	echo ""
 	echo "View Logs:"
-	echo "  log show --predicate 'process == \"ccblocks\"' --last 1d"
+	echo "  log show --last 1d --info --predicate 'eventMessage CONTAINS[c] \"ccblocks\"'"
 }
 
 # Remove LaunchAgent completely
@@ -371,7 +372,7 @@ main() {
 		;;
 	logs)
 		echo "Showing ccblocks logs from system log (last 24 hours):"
-		log show --predicate 'process == "ccblocks"' --last 1d --style compact
+		log show --last 1d --info --predicate 'eventMessage CONTAINS[c] "ccblocks"' --style compact
 		;;
 	-h | --help | help | "")
 		show_usage

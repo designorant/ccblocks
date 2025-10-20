@@ -73,7 +73,7 @@ fi
 print_header "Quick Commands"
 echo "=========================="
 if [ "$OS_TYPE" = "Darwin" ]; then
-	echo "  View logs:       log show --predicate 'process == \"ccblocks\"' --last 1d"
+	echo "  View logs:       log show --last 1d --info --predicate 'eventMessage CONTAINS[c] \"ccblocks\"'"
 else
 	echo "  View logs:       journalctl --user -t ccblocks -n 50"
 fi

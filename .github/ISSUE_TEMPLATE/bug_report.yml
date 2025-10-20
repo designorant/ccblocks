@@ -69,7 +69,7 @@ body:
       label: Relevant Logs
       description: |
         If applicable, paste relevant logs:
-        - macOS: `log show --predicate 'process == "ccblocks"' --last 1d`
+        - macOS: `log show --last 1d --info --predicate 'eventMessage CONTAINS[c] "ccblocks"'`
         - Linux: `journalctl --user -t ccblocks -n 50`
       render: shell
 

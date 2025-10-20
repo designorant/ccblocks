@@ -142,7 +142,7 @@ ccblocks provides:
 ccblocks status
 
 # View system logs
-log show --predicate 'process == "ccblocks"' --last 1d    # macOS
+log show --last 1d --info --predicate 'eventMessage CONTAINS[c] "ccblocks"'    # macOS
 journalctl --user -t ccblocks -n 50                       # Linux
 
 # Manual test trigger

@@ -319,7 +319,7 @@ Before submitting a pull request, ensure:
 ### macOS Development
 
 - Test with LaunchAgent: `launchctl list | grep ccblocks`
-- View logs: `log show --predicate 'process == "ccblocks"' --last 1h`
+- View logs: `log show --last 1d --info --predicate 'eventMessage CONTAINS[c] "ccblocks"'`
 - LaunchAgent plist: `~/Library/LaunchAgents/ccblocks.plist`
 
 ### Linux Development
