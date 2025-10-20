@@ -48,6 +48,7 @@ After=network.target
 Type=oneshot
 ExecStart=$TRIGGER_SCRIPT
 SyslogIdentifier=ccblocks
+Environment=PATH=$PATH
 
 [Install]
 WantedBy=default.target
@@ -104,6 +105,7 @@ After=network.target
 Type=oneshot
 ExecStart=$TRIGGER_SCRIPT
 SyslogIdentifier=ccblocks
+Environment=PATH=$PATH
 
 [Install]
 WantedBy=default.target

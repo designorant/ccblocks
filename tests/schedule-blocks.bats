@@ -10,6 +10,10 @@ setup() {
 
     # Create mock helper for integration tests
     create_mock_helper
+
+    # Isolate config writes to test temp directory
+    export CCBLOCKS_CONFIG="${TEST_TEMP_DIR}/.config/ccblocks"
+    mkdir -p "$CCBLOCKS_CONFIG"
 }
 
 teardown() {

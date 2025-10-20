@@ -129,6 +129,17 @@ create_plist() {
         <string>$TRIGGER_SCRIPT</string>
     </array>
 
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>$PATH</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>$HOME/Library/Logs/ccblocks.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/Library/Logs/ccblocks.log</string>
+
     <key>StartCalendarInterval</key>
     <array>$intervals
     </array>
@@ -174,6 +185,17 @@ create_plist_custom() {
     <array>
         <string>$TRIGGER_SCRIPT</string>
     </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>$PATH</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>$HOME/Library/Logs/ccblocks.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/Library/Logs/ccblocks.log</string>
 
     <key>StartCalendarInterval</key>
     <array>$intervals

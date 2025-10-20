@@ -15,6 +15,8 @@ NC='\033[0m' # No Colour
 : "${CCBLOCKS_INSTALL:=${SCRIPT_DIR:-$(pwd)}}"
 : "${CCBLOCKS_CONFIG:=${HOME}/.config/ccblocks}"
 
+# No PATH bootstrap: we rely on the launcher to pass PATH through.
+
 # Utility helpers
 command_exists() {
 	command -v "$1" >/dev/null 2>&1

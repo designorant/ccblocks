@@ -102,8 +102,8 @@ fallback_cleanup() {
 				launchctl bootout "gui/$uid/ccblocks" 2>/dev/null || true
 			fi
 
-			# Remove plist file
-			rm -f "$plist_path"
+			# Remove plist file (ignore permission errors on hardened systems)
+			rm -f "$plist_path" 2>/dev/null || true
 			print_status "Removed LaunchAgent plist: $plist_path"
 		fi
 

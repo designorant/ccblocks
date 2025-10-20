@@ -205,8 +205,10 @@ restore_helper() {
 @test "uninstall calls helper remove command" {
     # Create platform-specific config file so the helper remove command gets called
     if [[ "$(uname)" == "Darwin" ]]; then
-        mkdir -p "$HOME/Library/LaunchAgents"
-        touch "$HOME/Library/LaunchAgents/ccblocks.plist"
+        mkdir -p "$HOME/Library/LaunchAgents" 2>/dev/null || true
+        if ! touch "$HOME/Library/LaunchAgents/ccblocks.plist" 2>/dev/null; then
+            skip "Cannot write to ~/Library/LaunchAgents in this environment"
+        fi
     else
         mkdir -p "$HOME/.config/systemd/user"
         touch "$HOME/.config/systemd/user/ccblocks@.service"

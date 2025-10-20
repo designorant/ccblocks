@@ -39,7 +39,7 @@ teardown_test_dir() {
 
     # Clean up config directory if created during tests
     if [ -d "$HOME/.config/ccblocks" ]; then
-        rm -rf "$HOME/.config/ccblocks"
+        rm -rf "$HOME/.config/ccblocks" 2>/dev/null || true
     fi
 }
 
