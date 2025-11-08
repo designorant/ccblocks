@@ -49,9 +49,6 @@ Type=oneshot
 ExecStart=$TRIGGER_SCRIPT
 SyslogIdentifier=ccblocks
 Environment=PATH=$PATH
-
-[Install]
-WantedBy=default.target
 EOF
 
 	# Define timer schedules
@@ -80,9 +77,6 @@ Description=ccblocks Scheduling Timer (%i)
 [Timer]
 OnCalendar=$oncalendar
 Persistent=true
-
-[Install]
-WantedBy=timers.target
 EOF
 
 	print_status "Created systemd service and timer files"
@@ -106,9 +100,6 @@ Type=oneshot
 ExecStart=$TRIGGER_SCRIPT
 SyslogIdentifier=ccblocks
 Environment=PATH=$PATH
-
-[Install]
-WantedBy=default.target
 EOF
 
 	# Convert comma-separated hours to systemd OnCalendar format
@@ -125,9 +116,6 @@ Description=ccblocks Scheduling Timer (%i)
 [Timer]
 OnCalendar=$oncalendar
 Persistent=true
-
-[Install]
-WantedBy=timers.target
 EOF
 
 	print_status "Created custom systemd service and timer files"
