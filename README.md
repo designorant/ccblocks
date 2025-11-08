@@ -60,6 +60,15 @@ brew install designorant/tap/ccblocks
 ccblocks setup
 ```
 
+### Path to Official Homebrew
+
+ccblocks is currently distributed via a [personal Homebrew tap](https://github.com/designorant/homebrew-tap/blob/master/Formula/ccblocks.rb). Once the project reaches sufficient popularity, it will be submitted to the official Homebrew repository for easier installation (just `brew install ccblocks`).
+
+**Requirements for official inclusion** ([per Homebrew guidelines](https://docs.brew.sh/Acceptable-Formulae#niche-or-self-submitted-stuff)):
+- ≥30 forks, ≥30 watchers, **or** ≥75 stars
+
+If you find ccblocks useful, starring the repository helps us reach this milestone!
+
 **Platform Support:** macOS and Linux only. Windows is not currently supported ([contribute!](https://github.com/designorant/ccblocks/issues)).
 
 ## Schedules
