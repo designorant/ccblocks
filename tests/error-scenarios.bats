@@ -206,6 +206,9 @@ EOF
     export HOME="${TEST_TEMP_DIR}/fake_home"
     mkdir -p "$HOME"
 
+    # Use test mode to simulate Claude not found
+    export CCBLOCKS_TEST_NO_CLAUDE=1
+
     PATH="/usr/bin:/bin" run "${PROJECT_ROOT}/libexec/ccblocks-daemon.sh"
     assert_failure
     assert_output --partial "Claude CLI not found"

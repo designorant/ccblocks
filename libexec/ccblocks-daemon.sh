@@ -19,23 +19,28 @@ mkdir -p "$CCBLOCKS_CONFIG" 2>/dev/null || true
 # No runtime PATH bootstrap. The scheduler injects PATH at start time.
 
 # Find Claude CLI (prefer PATH, then common install locations)
-CLAUDE_BIN=$(command -v claude 2>/dev/null || true)
-if [ -z "$CLAUDE_BIN" ]; then
-	for candidate in \
-		"$HOME/.local/share/mise/shims/claude" \
-		"/opt/homebrew/bin/claude" \
-		"/usr/local/bin/claude" \
-		"/home/linuxbrew/.linuxbrew/bin/claude"; do
-		if [ -x "$candidate" ]; then
-			CLAUDE_BIN="$candidate"
-			break
-		fi
-	done
-fi
+# Support test mode to simulate Claude not found
+if [ "${CCBLOCKS_TEST_NO_CLAUDE:-0}" -eq 1 ]; then
+	CLAUDE_BIN=""
+else
+	CLAUDE_BIN=$(command -v claude 2>/dev/null || true)
+	if [ -z "$CLAUDE_BIN" ]; then
+		for candidate in \
+			"$HOME/.local/share/mise/shims/claude" \
+			"/opt/homebrew/bin/claude" \
+			"/usr/local/bin/claude" \
+			"/home/linuxbrew/.linuxbrew/bin/claude"; do
+			if [ -x "$candidate" ]; then
+				CLAUDE_BIN="$candidate"
+				break
+			fi
+		done
+	fi
 
-# Last-resort recursive search under ~/.local (may be a shim)
-if [ -z "$CLAUDE_BIN" ]; then
-	CLAUDE_BIN=$(find "$HOME/.local" -name claude -type f -executable 2>/dev/null | head -1 || true)
+	# Last-resort recursive search under ~/.local (may be a shim)
+	if [ -z "$CLAUDE_BIN" ]; then
+		CLAUDE_BIN=$(find "$HOME/.local" -name claude -type f -executable 2>/dev/null | head -1 || true)
+	fi
 fi
 
 if [ -z "$CLAUDE_BIN" ]; then
