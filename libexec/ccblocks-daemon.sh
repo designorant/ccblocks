@@ -74,14 +74,38 @@ if [ $rc -eq 0 ]; then
 		# Give Claude a brief moment to update backend state
 		sleep 1
 		usage_out="$(ccusage 2>/dev/null || true)"
-		if echo "$usage_out" | grep -qiE "No active blocks|Session expired"; then
+
+		# Trim whitespace for more robust matching
+		usage_out_trimmed="$(echo "$usage_out" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+		# Debug logging when CCBLOCKS_DEBUG=1
+		if [ "${CCBLOCKS_DEBUG:-0}" -ne 0 ]; then
+			echo "[DEBUG] ccusage output: '$usage_out_trimmed'"
+		fi
+
+		# Check for empty output
+		if [ -z "$usage_out_trimmed" ]; then
+			verify_fail=0
+			print_warning "Trigger verification inconclusive (ccusage returned empty output)"
+			if [ "${CCBLOCKS_DEBUG:-0}" -ne 0 ]; then
+				echo "[DEBUG] Empty output may indicate ccusage command succeeded but no data available"
+			fi
+		# Check for failure indicators
+		elif echo "$usage_out_trimmed" | grep -qiE "No active blocks|Session expired|No active session"; then
 			verify_fail=1
-		elif echo "$usage_out" | grep -qiE "Time remaining:|Current session: [0-9]+%"; then
+		# Check for success indicators (more flexible patterns)
+		elif echo "$usage_out_trimmed" | grep -qiE "Time remaining|Current session|Block [0-9]+ \(Current\)|[0-9]+h [0-9]+m|Active block"; then
 			verify_fail=0
 		else
-			# Unknown output; do not fail hard, just warn
+			# Unknown output; do not fail hard, just warn with details
 			verify_fail=0
 			print_warning "Trigger verification inconclusive (ccusage output unrecognised)"
+			if [ "${CCBLOCKS_DEBUG:-0}" -ne 0 ]; then
+				echo "[DEBUG] Unrecognised output: '$usage_out_trimmed'"
+			else
+				# In non-debug mode, log to system for troubleshooting
+				log_to_system "ccusage verification inconclusive. Output: ${usage_out_trimmed:0:100}"
+			fi
 		fi
 	else
 		print_warning "ccusage not found; skipping trigger verification"

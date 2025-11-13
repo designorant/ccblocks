@@ -115,6 +115,19 @@ mock_ccusage_not_installed() {
     :
 }
 
+# Mock ccusage with alternative format (e.g., time format variations)
+mock_ccusage_alternative_format() {
+    mock_command "ccusage" "cat <<'CCUSAGE_EOF'
+Active block
+3h 15m remaining
+CCUSAGE_EOF"
+}
+
+# Mock ccusage with empty output
+mock_ccusage_empty_output() {
+    mock_command "ccusage" "echo ''; exit 0"
+}
+
 # Create a fake activity file with specific timestamp
 create_activity_file() {
     local age_seconds="$1"
