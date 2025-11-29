@@ -112,3 +112,62 @@ teardown() {
     # Restore permissions for cleanup
     chmod 755 "$CCBLOCKS_CONFIG"
 }
+
+# ccusage verification tests
+@test "ccblocks-daemon succeeds with standard ccusage active block output" {
+    mock_claude_success
+    mock_ccusage_active_block
+
+    run "$SCRIPT"
+    assert_success
+    refute_output --partial "inconclusive"
+}
+
+@test "ccblocks-daemon warns when ccusage shows no active block but doesn't fail" {
+    mock_claude_success
+    mock_ccusage_no_block
+
+    run "$SCRIPT"
+    # Should still succeed by default (non-strict mode)
+    assert_success
+}
+
+@test "ccblocks-daemon handles alternative ccusage output formats" {
+    mock_claude_success
+    mock_ccusage_alternative_format
+
+    run "$SCRIPT"
+    assert_success
+    # Should not show inconclusive warning for recognized alternative format
+    refute_output --partial "inconclusive"
+}
+
+@test "ccblocks-daemon warns on empty ccusage output but continues" {
+    mock_claude_success
+    mock_ccusage_empty_output
+
+    run "$SCRIPT"
+    assert_success
+    assert_output --partial "empty output"
+}
+
+@test "ccblocks-daemon warns when ccusage is not found" {
+    mock_claude_success
+    mock_ccusage_not_installed
+
+    run "$SCRIPT"
+    assert_success
+    assert_output --partial "ccusage not found"
+}
+
+@test "ccblocks-daemon logs actual output in debug mode for unrecognised ccusage format" {
+    mock_claude_success
+    # Mock ccusage with completely unexpected format
+    mock_command "ccusage" "echo 'Unexpected format here'; exit 0"
+
+    export CCBLOCKS_DEBUG=1
+    run "$SCRIPT"
+    assert_success
+    assert_output --partial "[DEBUG]"
+    assert_output --partial "Unexpected format"
+}
