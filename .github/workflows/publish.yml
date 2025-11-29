@@ -131,7 +131,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Homebrew tap
-        uses: dawidd6/action-homebrew-bump-formula@v3
+        uses: dawidd6/action-homebrew-bump-formula@v6
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           formula: ccblocks
