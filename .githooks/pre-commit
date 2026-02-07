@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+
+# Mirrors CI: shellcheck + shfmt on staged shell scripts.
+# Matches the same file set as the Makefile lint/format-check targets.
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+SHELL_FILES=""
+
+for file in $STAGED; do
+	case "$file" in
+	ccblocks | libexec/ccblocks | libexec/bin/*.sh | libexec/lib/*.sh | libexec/ccblocks-daemon.sh | dev/*.sh)
+		SHELL_FILES="$SHELL_FILES $file"
+		;;
+	esac
+done
+
+if [[ -z "$SHELL_FILES" ]]; then
+	exit 0
+fi
+
+ERRORS=0
+
+# shellcheck
+if command -v shellcheck &>/dev/null; then
+	for file in $SHELL_FILES; do
+		if ! git show ":$file" | shellcheck -; then
+			echo "error: shellcheck failed on $file"
+			ERRORS=$((ERRORS + 1))
+		fi
+	done
+else
+	echo "warning: shellcheck not found, skipping (make install-deps)"
+fi
+
+# shfmt (ccblocks uses tab indentation: -i 0)
+if command -v shfmt &>/dev/null; then
+	for file in $SHELL_FILES; do
+		if ! git show ":$file" | shfmt -d -i 0; then
+			echo "error: shfmt failed on $file"
+			ERRORS=$((ERRORS + 1))
+		fi
+	done
+else
+	echo "warning: shfmt not found, skipping (make install-deps)"
+fi
+
+if [[ $ERRORS -gt 0 ]]; then
+	echo ""
+	echo "$ERRORS problem(s) found. Fix before committing."
+	exit 1
+fi
