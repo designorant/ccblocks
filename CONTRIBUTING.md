@@ -340,4 +340,4 @@ Windows is not currently supported. If you're interested in contributing Windows
 
 ## License
 
-By contributing to ccblocks, you agree that your contributions will be licensed under the Apache License 2.0.
+By contributing to ccblocks, you agree that your contributions will be licensed under the MIT License.

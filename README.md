@@ -244,4 +244,4 @@ Contributions are welcome! For local development, testing, and contribution guid
 
 ## License
 
-[Apache-2.0](LICENSE) © [@designorant](https://github.com/designorant)
+[MIT](LICENSE) © [@designorant](https://github.com/designorant)
