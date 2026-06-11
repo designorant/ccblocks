@@ -80,7 +80,9 @@ teardown() {
 
 	while IFS= read -r expression_line; do
 		line_no="${expression_line%%:*}"
-		previous_five="$(sed -n "$((line_no - 5)),$((line_no - 1))p" "$PUBLISH_WORKFLOW")"
+		[ "$line_no" -le 1 ] && continue
+		start_line=$(((line_no > 5) ? line_no - 5 : 1))
+		previous_five="$(sed -n "${start_line},$((line_no - 1))p" "$PUBLISH_WORKFLOW")"
 		if echo "$previous_five" | grep -Eq 'run:[[:space:]]*\||run:[[:space:]]*$'; then
 			echo "Version output is inlined in a shell run block at line $line_no"
 			return 1
