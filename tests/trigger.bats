@@ -44,6 +44,24 @@ EOF
     assert_success
 }
 
+@test "ccblocks-daemon finds owner-only-executable claude via recursive .local search" {
+    export HOME="${TEST_TEMP_DIR}/home"
+    nested_dir="$HOME/.local/share/claude-app"
+    mkdir -p "$nested_dir"
+    cat > "$nested_dir/claude" << 'EOF'
+#!/usr/bin/env bash
+if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
+    echo '{"loggedIn":true,"authMethod":"subscription","apiProvider":"firstParty"}'
+    exit 0
+fi
+exit 0
+EOF
+    chmod 700 "$nested_dir/claude"
+
+    PATH="/usr/bin:/bin" run "$SCRIPT"
+    assert_success
+}
+
 @test "ccblocks-daemon refuses to trigger when ANTHROPIC_API_KEY is set" {
     calls_file="${TEST_TEMP_DIR}/claude-calls.log"
     mock_claude_call_recorder "$calls_file"

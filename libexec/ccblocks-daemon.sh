@@ -37,7 +37,7 @@ else
 
 	# Last-resort recursive search under ~/.local (may be a shim)
 	if [ -z "$CLAUDE_BIN" ]; then
-		CLAUDE_BIN=$(find "$HOME/.local" -name claude -type f -perm -111 2>/dev/null | head -1 || true)
+		CLAUDE_BIN=$(find "$HOME/.local" -name claude -type f -perm -100 2>/dev/null | head -1 || true)
 	fi
 
 	# System-wide install locations
