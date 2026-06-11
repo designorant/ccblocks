@@ -171,7 +171,7 @@ jobs:
             --repo designorant/homebrew-tap \
             --head "bump-ccblocks-${VERSION}" \
             --json number \
-            --jq '.[0].number')
+            --jq '.[0].number // empty')
 
           if [ -n "$PR_NUMBER" ]; then
             gh pr merge "$PR_NUMBER" \
