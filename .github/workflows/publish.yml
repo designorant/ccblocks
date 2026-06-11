@@ -1,5 +1,5 @@
 name: Publish
-run-name: Publish • ${{ github.event.workflow_run.head_commit.message }}
+run-name: Publish
 
 on:
   workflow_run:
@@ -8,20 +8,27 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Validate
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       tag_exists: ${{ steps.check_tag.outputs.exists }}
       version_changed: ${{ steps.check_version_changed.outputs.changed }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
 
       - name: Check if VERSION file changed
         id: check_version_changed
@@ -54,19 +61,28 @@ jobs:
         id: get_version
         run: |
           VERSION=$(tr -d '\n\r' < VERSION)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION_REGEX='^[0-9]+[.][0-9]+[.][0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?([+][0-9A-Za-z][0-9A-Za-z.-]*)?$'
+
+          if [[ ! "$VERSION" =~ $VERSION_REGEX ]]; then
+            echo "Version must match SemVer, for example 1.2.3 or 1.2.3-beta.1" >&2
+            exit 1
+          fi
+
+          printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
           echo "Version: $VERSION"
 
       - name: Check if tag already exists
         if: steps.check_version_changed.outputs.changed == 'true'
         id: check_tag
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
         run: |
-          if git rev-parse "v${{ steps.get_version.outputs.version }}" >/dev/null 2>&1; then
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Tag v${{ steps.get_version.outputs.version }} already exists"
+            echo "Tag v${VERSION} already exists"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Tag v${{ steps.get_version.outputs.version }} does not exist"
+            echo "Tag v${VERSION} does not exist"
           fi
 
   release:
@@ -78,20 +94,22 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Generate changelog
         id: changelog
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          VERSION="${{ needs.validate.outputs.version }}"
-
           # Get commits since last tag (or all if no previous tag)
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
           if [ -n "$LAST_TAG" ]; then
-            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+            COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
             echo "## Changes since ${LAST_TAG}" > changelog.md
           else
             COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
@@ -101,26 +119,28 @@ jobs:
           echo "" >> changelog.md
           echo "$COMMITS" >> changelog.md
           echo "" >> changelog.md
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/commits/v${VERSION}" >> changelog.md
+          echo "**Full Changelog**: https://github.com/${REPOSITORY}/commits/v${VERSION}" >> changelog.md
 
           cat changelog.md
 
       - name: Create and push tag
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Create tag only if it doesn't exist
-          if ! git rev-parse "v${{ needs.validate.outputs.version }}" >/dev/null 2>&1; then
-            git tag -a "v${{ needs.validate.outputs.version }}" -m "Release v${{ needs.validate.outputs.version }}"
-            git push origin "v${{ needs.validate.outputs.version }}"
-            echo "Tag v${{ needs.validate.outputs.version }} created and pushed"
+          if ! git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            git tag -a "v${VERSION}" -m "Release v${VERSION}"
+            git push origin "v${VERSION}"
+            echo "Tag v${VERSION} created and pushed"
           else
-            echo "Tag v${{ needs.validate.outputs.version }} already exists, skipping"
+            echo "Tag v${VERSION} already exists, skipping"
           fi
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           tag_name: v${{ needs.validate.outputs.version }}
           name: v${{ needs.validate.outputs.version }}
@@ -131,7 +151,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Homebrew tap
-        uses: dawidd6/action-homebrew-bump-formula@v6
+        uses: dawidd6/action-homebrew-bump-formula@c5ddc585e75f0f750a8b4f610688b4bec9e80915
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           formula: ccblocks
@@ -141,6 +161,7 @@ jobs:
       - name: Auto-merge Homebrew tap PR
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
           # Wait for PR to be created
           sleep 5
@@ -148,7 +169,7 @@ jobs:
           # Find and merge the bump PR
           PR_NUMBER=$(gh pr list \
             --repo designorant/homebrew-tap \
-            --head "bump-ccblocks-${{ needs.validate.outputs.version }}" \
+            --head "bump-ccblocks-${VERSION}" \
             --json number \
             --jq '.[0].number')
 
@@ -156,10 +177,10 @@ jobs:
             gh pr merge "$PR_NUMBER" \
               --repo designorant/homebrew-tap \
               --squash \
-              --subject "chore: bump ccblocks to ${{ needs.validate.outputs.version }}" \
+              --subject "chore: bump ccblocks to ${VERSION}" \
               --body ""
             echo "✓ Merged PR #$PR_NUMBER"
           else
-            echo "⚠ No PR found for bump-ccblocks-${{ needs.validate.outputs.version }}"
+            echo "⚠ No PR found for bump-ccblocks-${VERSION}"
             exit 1
           fi

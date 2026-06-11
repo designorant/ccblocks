@@ -1,5 +1,5 @@
 name: Test
-run-name: Test • ${{ github.event.head_commit.message || github.event.pull_request.title || 'Manual trigger' }}
+run-name: Test
 
 on:
   push:
@@ -7,12 +7,15 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+
 jobs:
   shellcheck:
     name: Shellcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Run shellcheck
         run: |
@@ -23,11 +26,12 @@ jobs:
     name: Format Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Install shfmt
         run: |
-          wget https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64 -O shfmt
+          curl -fsSLo shfmt https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64
+          echo "27b3c6f9d9592fc5b4856c341d1ff2c88856709b9e76469313642a1d7b558fe0  shfmt" | sha256sum -c
           chmod +x shfmt
           sudo mv shfmt /usr/local/bin/
           shfmt --version
@@ -44,12 +48,14 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Set up Homebrew (Linux)
         if: runner.os == 'Linux'
         run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/null
+          curl -fsSLo /tmp/homebrew-install.sh https://raw.githubusercontent.com/Homebrew/install/93a25fd2d2fdb86422303c292b9223f84ef23eaf/install.sh
+          echo "17f204b128869ec71e6b650051f1e65ef5b74cf994c2ff8b919103241554dd2f  /tmp/homebrew-install.sh" | sha256sum -c
+          /bin/bash /tmp/homebrew-install.sh </dev/null
           echo "/home/linuxbrew/.linuxbrew/bin" >> $GITHUB_PATH
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
