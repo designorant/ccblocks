@@ -30,16 +30,16 @@ PROJECT_LIB_DIR="${PROJECT_RUNTIME_DIR}/lib"
 setup_test_dir() {
     TEST_TEMP_DIR="$(mktemp -d)"
     export TEST_TEMP_DIR
+
+    # Sandbox the config dir so no script under test can touch the
+    # user's real ~/.config/ccblocks; tests may re-export their own
+    # temp path on top of this default.
+    export CCBLOCKS_CONFIG="${TEST_TEMP_DIR}/.config/ccblocks"
 }
 
 teardown_test_dir() {
     if [ -n "${TEST_TEMP_DIR}" ] && [ -d "${TEST_TEMP_DIR}" ]; then
         rm -rf "${TEST_TEMP_DIR}"
-    fi
-
-    # Clean up config directory if created during tests
-    if [ -d "$HOME/.config/ccblocks" ]; then
-        rm -rf "$HOME/.config/ccblocks" 2>/dev/null || true
     fi
 }
 
