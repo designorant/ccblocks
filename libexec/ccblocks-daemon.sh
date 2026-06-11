@@ -72,18 +72,11 @@ timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
 # Run claude: default silences stdout but preserves stderr so errors land in logs.
 # Set CCBLOCKS_DEBUG=1 to keep stdout as well.
+rc=0
 if [ "${CCBLOCKS_DEBUG:-0}" -ne 0 ]; then
-	if run_claude_subscription_trigger "$CLAUDE_BIN"; then
-		rc=0
-	else
-		rc=$?
-	fi
+	run_claude_subscription_trigger "$CLAUDE_BIN" || rc=$?
 else
-	if run_claude_subscription_trigger "$CLAUDE_BIN" >/dev/null; then
-		rc=0
-	else
-		rc=$?
-	fi
+	run_claude_subscription_trigger "$CLAUDE_BIN" >/dev/null || rc=$?
 fi
 
 if [ $rc -eq 0 ]; then
