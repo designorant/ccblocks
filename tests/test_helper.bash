@@ -69,13 +69,46 @@ EOF
     chmod +x "${MOCK_BIN_DIR}/${cmd_name}"
 }
 
-# Mock claude command that simulates successful execution
-mock_claude_success() {
-    mock_command "claude" '
-if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
-    echo "{\"loggedIn\":true,\"authMethod\":\"subscription\",\"apiProvider\":\"firstParty\"}"
+# Canonical `claude auth status --json` payload used by all claude mocks
+claude_auth_json() {
+    local logged_in="${1:-true}"
+    local auth_method="${2:-subscription}"
+    local api_provider="${3:-firstParty}"
+    printf '{"loggedIn":%s,"authMethod":"%s","apiProvider":"%s"}' \
+        "$logged_in" "$auth_method" "$api_provider"
+}
+
+# Build a claude mock that answers `auth status` with $1 and otherwise runs $2
+mock_claude_with_auth() {
+    local auth_json="$1"
+    local body="$2"
+    mock_command "claude" "
+if [ \"\$1\" = \"auth\" ] && [ \"\$2\" = \"status\" ]; then
+    echo '${auth_json}'
     exit 0
 fi
+${body}"
+}
+
+# Write a standalone auth-aware claude mock script to an arbitrary path
+write_claude_mock_script() {
+    local path="$1"
+    local auth_json="${2:-$(claude_auth_json)}"
+    mkdir -p "$(dirname "$path")"
+    cat > "$path" << EOF
+#!/usr/bin/env bash
+if [ "\$1" = "auth" ] && [ "\$2" = "status" ]; then
+    echo '${auth_json}'
+    exit 0
+fi
+exit 0
+EOF
+    chmod +x "$path"
+}
+
+# Mock claude command that simulates successful execution
+mock_claude_success() {
+    mock_claude_with_auth "$(claude_auth_json)" '
 if [ -n "${CCBLOCKS_CLAUDE_ARGS_LOG:-}" ]; then
     printf "%s\n" "$*" >> "$CCBLOCKS_CLAUDE_ARGS_LOG"
 fi
@@ -85,11 +118,7 @@ exit 0'
 
 # Mock claude command that fails
 mock_claude_failure() {
-    mock_command "claude" '
-if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
-    echo "{\"loggedIn\":true,\"authMethod\":\"subscription\",\"apiProvider\":\"firstParty\"}"
-    exit 0
-fi
+    mock_claude_with_auth "$(claude_auth_json)" '
 echo "Claude mock: Failed" >&2
 exit 1'
 }
@@ -98,34 +127,21 @@ exit 1'
 mock_claude_auth_method() {
     local auth_method="$1"
     local api_provider="${2:-firstParty}"
-    mock_command "claude" "
-if [ \"\$1\" = \"auth\" ] && [ \"\$2\" = \"status\" ]; then
-    echo '{\"loggedIn\":true,\"authMethod\":\"${auth_method}\",\"apiProvider\":\"${api_provider}\"}'
-    exit 0
-fi
-echo 'Claude mock: Success'
-exit 0"
+    mock_claude_with_auth "$(claude_auth_json true "$auth_method" "$api_provider")" '
+echo "Claude mock: Success"
+exit 0'
 }
 
 # Mock claude command with no authenticated user
 mock_claude_logged_out() {
-    mock_command "claude" '
-if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
-    echo "{\"loggedIn\":false,\"authMethod\":\"none\",\"apiProvider\":\"firstParty\"}"
-    exit 0
-fi
+    mock_claude_with_auth "$(claude_auth_json false none)" '
 echo "Claude mock: Success"
 exit 0'
 }
 
 # Mock claude command with subscription auth but failing trigger
 mock_claude_trigger_timeout() {
-    mock_command "claude" '
-if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
-    echo "{\"loggedIn\":true,\"authMethod\":\"subscription\",\"apiProvider\":\"firstParty\"}"
-    exit 0
-fi
-exit 124'
+    mock_claude_with_auth "$(claude_auth_json)" 'exit 124'
 }
 
 # Mock claude command that records all invocations

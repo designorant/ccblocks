@@ -28,17 +28,7 @@ teardown() {
 
 @test "ccblocks-daemon finds executable claude under HOME .local fallback" {
     export HOME="${TEST_TEMP_DIR}/home"
-    fallback_dir="$HOME/.local/bin"
-    mkdir -p "$fallback_dir"
-    cat > "$fallback_dir/claude" << 'EOF'
-#!/usr/bin/env bash
-if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
-    echo '{"loggedIn":true,"authMethod":"subscription","apiProvider":"firstParty"}'
-    exit 0
-fi
-exit 0
-EOF
-    chmod +x "$fallback_dir/claude"
+    write_claude_mock_script "$HOME/.local/bin/claude"
 
     PATH="/usr/bin:/bin" run "$SCRIPT"
     assert_success
@@ -46,17 +36,8 @@ EOF
 
 @test "ccblocks-daemon finds owner-only-executable claude via recursive .local search" {
     export HOME="${TEST_TEMP_DIR}/home"
-    nested_dir="$HOME/.local/share/claude-app"
-    mkdir -p "$nested_dir"
-    cat > "$nested_dir/claude" << 'EOF'
-#!/usr/bin/env bash
-if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
-    echo '{"loggedIn":true,"authMethod":"subscription","apiProvider":"firstParty"}'
-    exit 0
-fi
-exit 0
-EOF
-    chmod 700 "$nested_dir/claude"
+    write_claude_mock_script "$HOME/.local/share/claude-app/claude"
+    chmod 700 "$HOME/.local/share/claude-app/claude"
 
     PATH="/usr/bin:/bin" run "$SCRIPT"
     assert_success

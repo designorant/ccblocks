@@ -322,16 +322,7 @@ restore_helper_for_status() {
 
     # Create a simple mock claude in a new mock bin directory
     local mock_bin="${TEST_TEMP_DIR}/mock_bin"
-    mkdir -p "$mock_bin"
-    cat > "$mock_bin/claude" << 'EOF'
-#!/usr/bin/env bash
-if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
-    echo '{"loggedIn":true,"authMethod":"subscription","apiProvider":"firstParty"}'
-    exit 0
-fi
-exit 0
-EOF
-    chmod +x "$mock_bin/claude"
+    write_claude_mock_script "$mock_bin/claude"
 
     # Mock logger to fail
     cat > "$mock_bin/logger" << 'EOF'
