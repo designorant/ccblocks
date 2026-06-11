@@ -39,13 +39,15 @@ check_claude_cli() {
 		exit 1
 	fi
 
-	print_status "Claude CLI found: $(command -v claude)"
+	local claude_bin
+	claude_bin="$(command -v claude)"
+	print_status "Claude CLI found: $claude_bin"
+
+	require_subscription_auth "$claude_bin"
 
 	# Test Claude CLI (quick test)
 	local test_output=""
-	# Use echo with a single dot instead of printf "test" for better compatibility
-	# The Claude CLI may hang with certain input methods, so we use a simple dot
-	if ! test_output=$(echo "." | run_with_timeout 15 claude 2>&1); then
+	if ! test_output=$(run_claude_subscription_trigger "$claude_bin" 2>&1); then
 		if echo "$test_output" | grep -qi "session limit reached"; then
 			print_warning "Claude CLI responded with a session limit message. Setup will continue, but scheduled triggers will wait until the limit resets."
 		else

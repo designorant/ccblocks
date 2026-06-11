@@ -18,7 +18,7 @@ mkdir -p "$CCBLOCKS_CONFIG" 2>/dev/null || true
 
 # No runtime PATH bootstrap. The scheduler injects PATH at start time.
 
-# Find Claude CLI (prefer PATH, then common install locations)
+# Find Claude CLI (prefer PATH, then user-local installs, then system locations)
 # Support test mode to simulate Claude not found
 if [ "${CCBLOCKS_TEST_NO_CLAUDE:-0}" -eq 1 ]; then
 	CLAUDE_BIN=""
@@ -27,9 +27,7 @@ else
 	if [ -z "$CLAUDE_BIN" ]; then
 		for candidate in \
 			"$HOME/.local/share/mise/shims/claude" \
-			"/opt/homebrew/bin/claude" \
-			"/usr/local/bin/claude" \
-			"/home/linuxbrew/.linuxbrew/bin/claude"; do
+			"$HOME/.local/bin/claude"; do
 			if [ -x "$candidate" ]; then
 				CLAUDE_BIN="$candidate"
 				break
@@ -39,7 +37,20 @@ else
 
 	# Last-resort recursive search under ~/.local (may be a shim)
 	if [ -z "$CLAUDE_BIN" ]; then
-		CLAUDE_BIN=$(find "$HOME/.local" -name claude -type f -executable 2>/dev/null | head -1 || true)
+		CLAUDE_BIN=$(find "$HOME/.local" -name claude -type f -perm -111 2>/dev/null | head -1 || true)
+	fi
+
+	# System-wide install locations
+	if [ -z "$CLAUDE_BIN" ]; then
+		for candidate in \
+			"/opt/homebrew/bin/claude" \
+			"/usr/local/bin/claude" \
+			"/home/linuxbrew/.linuxbrew/bin/claude"; do
+			if [ -x "$candidate" ]; then
+				CLAUDE_BIN="$candidate"
+				break
+			fi
+		done
 	fi
 fi
 
@@ -54,17 +65,25 @@ if [ -z "$CLAUDE_BIN" ]; then
 	exit 1
 fi
 
+require_subscription_auth "$CLAUDE_BIN"
+
 # Trigger new 5-hour block
 timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
 # Run claude: default silences stdout but preserves stderr so errors land in logs.
 # Set CCBLOCKS_DEBUG=1 to keep stdout as well.
 if [ "${CCBLOCKS_DEBUG:-0}" -ne 0 ]; then
-	echo "." | run_with_timeout 15 "$CLAUDE_BIN"
-	rc=$?
+	if run_claude_subscription_trigger "$CLAUDE_BIN"; then
+		rc=0
+	else
+		rc=$?
+	fi
 else
-	echo "." | run_with_timeout 15 "$CLAUDE_BIN" >/dev/null
-	rc=$?
+	if run_claude_subscription_trigger "$CLAUDE_BIN" >/dev/null; then
+		rc=0
+	else
+		rc=$?
+	fi
 fi
 
 if [ $rc -eq 0 ]; then

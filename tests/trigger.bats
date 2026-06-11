@@ -26,6 +26,135 @@ teardown() {
     assert_success
 }
 
+@test "ccblocks-daemon finds executable claude under HOME .local fallback" {
+    export HOME="${TEST_TEMP_DIR}/home"
+    fallback_dir="$HOME/.local/bin"
+    mkdir -p "$fallback_dir"
+    cat > "$fallback_dir/claude" << 'EOF'
+#!/usr/bin/env bash
+if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
+    echo '{"loggedIn":true,"authMethod":"subscription","apiProvider":"firstParty"}'
+    exit 0
+fi
+exit 0
+EOF
+    chmod +x "$fallback_dir/claude"
+
+    PATH="/usr/bin:/bin" run "$SCRIPT"
+    assert_success
+}
+
+@test "ccblocks-daemon refuses to trigger when ANTHROPIC_API_KEY is set" {
+    calls_file="${TEST_TEMP_DIR}/claude-calls.log"
+    mock_claude_call_recorder "$calls_file"
+
+    ANTHROPIC_API_KEY="sk-ant-test" run "$SCRIPT"
+    assert_failure
+    assert_output --partial "subscription auth"
+    refute [ -f "$calls_file" ]
+}
+
+@test "ccblocks-daemon refuses all API/provider credential environment variables before auth status" {
+    calls_file="${TEST_TEMP_DIR}/claude-calls.log"
+    mock_claude_call_recorder "$calls_file"
+
+    for var_name in \
+        ANTHROPIC_API_KEY \
+        ANTHROPIC_AUTH_TOKEN \
+        ANTHROPIC_BASE_URL \
+        CLAUDE_CODE_USE_BEDROCK \
+        CLAUDE_CODE_USE_VERTEX \
+        CLAUDE_CODE_USE_FOUNDRY; do
+        rm -f "$calls_file"
+
+        run env "$var_name=1" "$SCRIPT"
+        assert_failure
+        assert_output --partial "$var_name"
+        assert_output --partial "subscription auth"
+        refute [ -f "$calls_file" ]
+    done
+}
+
+@test "ccblocks-daemon refuses console/API auth status" {
+    mock_claude_auth_method "console"
+
+    run "$SCRIPT"
+    assert_failure
+    assert_output --partial "subscription auth"
+}
+
+@test "ccblocks-daemon refuses non-first-party API provider status" {
+    mock_claude_auth_method "subscription" "bedrock"
+
+    run "$SCRIPT"
+    assert_failure
+    assert_output --partial "API provider"
+    assert_output --partial "subscription auth"
+}
+
+@test "ccblocks-daemon refuses ambiguous oauth auth status" {
+    mock_claude_auth_method "oauth" "firstParty"
+
+    run "$SCRIPT"
+    assert_failure
+    assert_output --partial "auth method"
+    assert_output --partial "subscription auth"
+}
+
+@test "ccblocks-daemon requires an authenticated subscription user" {
+    mock_claude_logged_out
+
+    run "$SCRIPT"
+    assert_failure
+    assert_output --partial "claude auth login"
+}
+
+@test "ccblocks-daemon triggers haiku in print mode by default" {
+    args_file="${TEST_TEMP_DIR}/claude-args.log"
+    export CCBLOCKS_CLAUDE_ARGS_LOG="$args_file"
+    mock_claude_success
+
+    run "$SCRIPT"
+    assert_success
+    run cat "$args_file"
+    assert_output --partial "-p --safe-mode --model haiku"
+    assert_output --partial "--max-turns 1"
+    assert_output --partial "--output-format text"
+    assert_output --partial "Reply exactly: OK"
+}
+
+@test "ccblocks-daemon runs auth status through timeout wrapper" {
+    timeout_log="${TEST_TEMP_DIR}/timeout.log"
+    export CCBLOCKS_TIMEOUT_LOG="$timeout_log"
+    mock_claude_success
+    mock_command "timeout" '
+echo "$*" >> "$CCBLOCKS_TIMEOUT_LOG"
+duration="$1"
+shift
+"$@"'
+
+    run "$SCRIPT"
+    assert_success
+    run cat "$timeout_log"
+    assert_output --partial "auth status --json"
+}
+
+@test "ccblocks-daemon ignores trigger overrides and always uses the cheap prompt" {
+    args_file="${TEST_TEMP_DIR}/claude-args.log"
+    export CCBLOCKS_CLAUDE_ARGS_LOG="$args_file"
+    export CCBLOCKS_MODEL="sonnet"
+    export CCBLOCKS_PROMPT="Write a detailed essay about block scheduling"
+    mock_claude_success
+
+    run "$SCRIPT"
+    assert_success
+    run cat "$args_file"
+    assert_output --partial "--model haiku"
+    assert_output --partial "Reply exactly: OK"
+    refute_output --partial "--model sonnet"
+    refute_output --partial "detailed essay"
+}
+
 # Activity file tests
 @test "ccblocks-daemon creates .last-activity file on success" {
     mock_claude_success
@@ -62,8 +191,7 @@ teardown() {
 
 # Timeout tests
 @test "ccblocks-daemon handles claude timeout" {
-    # Mock claude that takes too long (simulated by returning timeout exit code)
-    mock_command "claude" 'sleep 1; exit 124'
+    mock_claude_trigger_timeout
 
     run "$SCRIPT"
     assert_failure

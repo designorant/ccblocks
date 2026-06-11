@@ -98,6 +98,100 @@ log_to_system() {
 	logger -t ccblocks "$message" 2>/dev/null || true
 }
 
+json_string_value() {
+	local json="$1"
+	local key="$2"
+
+	printf '%s' "$json" | tr -d '\n\r' | sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p"
+}
+
+json_bool_value() {
+	local json="$1"
+	local key="$2"
+
+	printf '%s' "$json" | tr -d '\n\r' | sed -n \
+		-e "s/.*\"$key\"[[:space:]]*:[[:space:]]*\(true\).*/\1/p" \
+		-e "s/.*\"$key\"[[:space:]]*:[[:space:]]*\(false\).*/\1/p"
+}
+
+require_subscription_auth() {
+	local claude_bin="${1:-claude}"
+	local forbidden_var
+
+	for forbidden_var in \
+		ANTHROPIC_API_KEY \
+		ANTHROPIC_AUTH_TOKEN \
+		ANTHROPIC_BASE_URL \
+		CLAUDE_CODE_USE_BEDROCK \
+		CLAUDE_CODE_USE_VERTEX \
+		CLAUDE_CODE_USE_FOUNDRY; do
+		if [ -n "${!forbidden_var:-}" ]; then
+			print_error "Refusing to trigger: $forbidden_var is set"
+			print_error "ccblocks only triggers Claude subscription auth users."
+			echo "Unset API/provider credentials before running ccblocks."
+			log_to_system "Refused trigger because $forbidden_var is set"
+			return 1
+		fi
+	done
+
+	local auth_status=""
+	local auth_rc=0
+	auth_status=$(run_with_timeout 15 "$claude_bin" auth status --json 2>/dev/null) || auth_rc=$?
+	if [ "$auth_rc" -ne 0 ]; then
+		print_error "Claude subscription auth not available"
+		echo "Run: claude auth login"
+		log_to_system "Refused trigger because Claude auth status failed"
+		return 1
+	fi
+
+	local logged_in auth_method api_provider
+	logged_in=$(json_bool_value "$auth_status" "loggedIn")
+	auth_method=$(json_string_value "$auth_status" "authMethod")
+	api_provider=$(json_string_value "$auth_status" "apiProvider")
+
+	if [ "$logged_in" != "true" ]; then
+		print_error "Claude subscription auth not available"
+		echo "Run: claude auth login"
+		log_to_system "Refused trigger because Claude is not logged in"
+		return 1
+	fi
+
+	case "$api_provider" in
+	"firstParty") ;;
+	*)
+		print_error "Refusing to trigger: Claude API provider is '$api_provider'"
+		print_error "ccblocks only triggers Claude subscription auth users."
+		log_to_system "Refused trigger because apiProvider=$api_provider"
+		return 1
+		;;
+	esac
+
+	case "$auth_method" in
+	"subscription" | "claudeai" | "claudeAi" | "claude.ai" | "oauth_subscription")
+		return 0
+		;;
+	*)
+		print_error "Refusing to trigger: Claude auth method is '$auth_method'"
+		print_error "ccblocks only triggers Claude subscription auth users."
+		log_to_system "Refused trigger because authMethod=$auth_method"
+		return 1
+		;;
+	esac
+}
+
+run_claude_subscription_trigger() {
+	local claude_bin="${1:-claude}"
+
+	run_with_timeout 15 "$claude_bin" \
+		-p \
+		--safe-mode \
+		--model haiku \
+		--max-turns 1 \
+		--tools "" \
+		--output-format text \
+		"Reply exactly: OK"
+}
+
 # Get helper script path based on OS
 get_helper_script() {
 	local script_dir="${1:-}"
@@ -326,4 +420,5 @@ calculate_coverage() {
 
 # Export functions so they can be used in subshells if needed
 export -f print_status print_error print_warning print_header show_logo run_with_timeout log_to_system command_exists
+export -f json_string_value json_bool_value require_subscription_auth run_claude_subscription_trigger
 export -f read_schedule_config write_schedule_config validate_custom_hours calculate_coverage

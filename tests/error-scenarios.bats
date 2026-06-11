@@ -215,6 +215,39 @@ EOF
     assert_output --partial "Tried:"
 }
 
+@test "setup refuses API credentials before Claude test request" {
+    export CCBLOCKS_CONFIG="${TEST_TEMP_DIR}/.config/ccblocks"
+    mkdir -p "$CCBLOCKS_CONFIG"
+    calls_file="${TEST_TEMP_DIR}/claude-calls.log"
+    mock_claude_call_recorder "$calls_file"
+
+    ANTHROPIC_API_KEY="sk-ant-test" run "${PROJECT_ROOT}/libexec/bin/setup.sh"
+    assert_failure
+    assert_output --partial "subscription auth"
+    refute [ -f "$calls_file" ]
+}
+
+@test "setup tests Claude with haiku print-mode trigger" {
+    export CCBLOCKS_CONFIG="${TEST_TEMP_DIR}/.config/ccblocks"
+    mkdir -p "$CCBLOCKS_CONFIG"
+    args_file="${TEST_TEMP_DIR}/claude-args.log"
+    export CCBLOCKS_CLAUDE_ARGS_LOG="$args_file"
+    export CCBLOCKS_MODEL="sonnet"
+    export CCBLOCKS_PROMPT="Write a detailed essay about block scheduling"
+    mock_claude_success
+
+    run bash -c "printf '1\nn\n' | '${PROJECT_ROOT}/libexec/bin/setup.sh'"
+    assert_success
+    assert_output --partial "Setup cancelled"
+
+    run cat "$args_file"
+    assert_output --partial "-p --safe-mode --model haiku"
+    assert_output --partial "--max-turns 1"
+    assert_output --partial "Reply exactly: OK"
+    refute_output --partial "--model sonnet"
+    refute_output --partial "detailed essay"
+}
+
 # Invalid input scenarios
 @test "ccblocks shows error for empty command" {
     run "${PROJECT_ROOT}/ccblocks" ""
@@ -292,6 +325,10 @@ restore_helper_for_status() {
     mkdir -p "$mock_bin"
     cat > "$mock_bin/claude" << 'EOF'
 #!/usr/bin/env bash
+if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
+    echo '{"loggedIn":true,"authMethod":"subscription","apiProvider":"firstParty"}'
+    exit 0
+fi
 exit 0
 EOF
     chmod +x "$mock_bin/claude"

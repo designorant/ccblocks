@@ -71,12 +71,70 @@ EOF
 
 # Mock claude command that simulates successful execution
 mock_claude_success() {
-    mock_command "claude" 'echo "Claude mock: Success"; exit 0'
+    mock_command "claude" '
+if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
+    echo "{\"loggedIn\":true,\"authMethod\":\"subscription\",\"apiProvider\":\"firstParty\"}"
+    exit 0
+fi
+if [ -n "${CCBLOCKS_CLAUDE_ARGS_LOG:-}" ]; then
+    printf "%s\n" "$*" >> "$CCBLOCKS_CLAUDE_ARGS_LOG"
+fi
+echo "Claude mock: Success"
+exit 0'
 }
 
 # Mock claude command that fails
 mock_claude_failure() {
-    mock_command "claude" 'echo "Claude mock: Failed" >&2; exit 1'
+    mock_command "claude" '
+if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
+    echo "{\"loggedIn\":true,\"authMethod\":\"subscription\",\"apiProvider\":\"firstParty\"}"
+    exit 0
+fi
+echo "Claude mock: Failed" >&2
+exit 1'
+}
+
+# Mock claude command with a non-subscription auth status
+mock_claude_auth_method() {
+    local auth_method="$1"
+    local api_provider="${2:-firstParty}"
+    mock_command "claude" "
+if [ \"\$1\" = \"auth\" ] && [ \"\$2\" = \"status\" ]; then
+    echo '{\"loggedIn\":true,\"authMethod\":\"${auth_method}\",\"apiProvider\":\"${api_provider}\"}'
+    exit 0
+fi
+echo 'Claude mock: Success'
+exit 0"
+}
+
+# Mock claude command with no authenticated user
+mock_claude_logged_out() {
+    mock_command "claude" '
+if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
+    echo "{\"loggedIn\":false,\"authMethod\":\"none\",\"apiProvider\":\"firstParty\"}"
+    exit 0
+fi
+echo "Claude mock: Success"
+exit 0'
+}
+
+# Mock claude command with subscription auth but failing trigger
+mock_claude_trigger_timeout() {
+    mock_command "claude" '
+if [ "$1" = "auth" ] && [ "$2" = "status" ]; then
+    echo "{\"loggedIn\":true,\"authMethod\":\"subscription\",\"apiProvider\":\"firstParty\"}"
+    exit 0
+fi
+exit 124'
+}
+
+# Mock claude command that records all invocations
+mock_claude_call_recorder() {
+    local calls_file="$1"
+    mock_command "claude" "
+printf '%s\n' \"\$*\" >> \"${calls_file}\"
+echo 'Claude mock: Success'
+exit 0"
 }
 
 # Mock claude command with /usage output showing active block
