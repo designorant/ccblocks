@@ -3,10 +3,11 @@
 ## What this codebase does
 
 ccblocks is a Bash CLI for macOS and Linux that schedules tiny Claude CLI
-triggers (`.` piped to `claude`) so a user's 5-hour Claude usage windows
-start at useful times. It installs user-level schedulers via LaunchAgent or
-systemd, stores state under `~/.config/ccblocks`, and has Bats tests for CLI,
-schedule validation, setup/status, trigger, and uninstall flows.
+triggers (a fixed one-turn `claude -p --model haiku` prompt) so a user's
+5-hour Claude usage windows start at useful times. It installs user-level
+schedulers via LaunchAgent or systemd, stores state under
+`~/.config/ccblocks`, and has Bats tests for CLI, schedule validation,
+setup/status, trigger, and uninstall flows.
 
 ## Auth shape
 
@@ -17,6 +18,9 @@ schedule validation, setup/status, trigger, and uninstall flows.
 - `check_claude_cli`, `command_exists`, and `run_with_timeout` gate external
   command execution for `claude`, `timeout`/`gtimeout`, `ccusage`, and system
   scheduler tools.
+- `require_subscription_auth` gates every trigger: it refuses API/provider
+  env credentials and verifies `claude auth status --json` reports a
+  logged-in first-party subscription before the fixed haiku trigger fires.
 - `validate_custom_hours` is the main validation primitive for user-supplied
   schedule hours before `create_plist_custom` or `create_service_custom`.
 - `read_schedule_config` and `write_schedule_config` use Python JSON parsing
