@@ -18,16 +18,17 @@ Time-shift Claude sessions to match your working hours
 ## How It Works
 
 **Simple concept:**
-- Scheduled trigger: `printf '.' | claude`
+- Scheduled trigger: `claude -p --safe-mode --model haiku ...`
 - Starts new 5-hour block automatically
-- Runs in your user session with full authentication
+- Runs through Claude subscription auth only
+- Refuses API-key and third-party provider auth
 - Zero maintenance after setup
 
 **Example:**
 - **Without ccblocks:** Start coding at 9 AM → hit limits at 10 AM → locked out until 2 PM
 - **With ccblocks:** Trigger at 6 AM → start coding at 9 AM → spans multiple blocks → more headroom
 
-**Token cost:** ~44-84 tokens/day
+**Token cost:** intentionally minimal. ccblocks always uses Claude Code's `haiku` model alias with a tiny one-turn prompt.
 
 ## Understanding the 5-Hour Block System
 
@@ -113,8 +114,11 @@ ccblocks uninstall                     # Complete removal
 **Does this bypass Claude's rate limits?**
 No. Your subscription limits still apply. This optimizes *when* your 5-hour windows start.
 
+**Does this use API credits?**
+No. ccblocks is designed for Claude subscription users. It refuses to trigger when API-key or third-party provider credentials are present.
+
 **How much does this cost in tokens?**
-Each trigger sends 1 token and receives ~10-20 tokens. At 4 triggers/day ≈ 44-84 tokens/day.
+Each trigger sends a tiny one-turn prompt to Claude Code's cheapest model alias, `haiku`, and expects a short acknowledgement.
 
 **Can I customise the schedule?**
 Yes! See [Configuration](#configuration) for preset schedules and custom schedule options.
@@ -140,9 +144,10 @@ ccblocks provides:
 **Trigger mechanism:**
 1. LaunchAgent/systemd timer fires at scheduled time
 2. Executes `ccblocks-daemon` in your user session
-3. Runs `printf '.' | claude`
-4. New 5-hour block starts immediately
-5. Logs success/failure to system log
+3. Confirms Claude subscription auth is active and API/provider credentials are not present
+4. Runs `claude -p --safe-mode --model haiku --max-turns 1 --tools "" --output-format text ...`
+5. New 5-hour block starts immediately
+6. Logs success/failure to system log
 
 ## Status & Monitoring
 

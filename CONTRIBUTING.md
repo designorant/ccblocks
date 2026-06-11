@@ -195,7 +195,7 @@ ccblocks/
 - **libexec/bin/schedule.sh** - Manages schedule patterns (247, work, night, custom)
 - **libexec/bin/status.sh** - Status dashboard with schedule and activity
 - **libexec/bin/uninstall.sh** - Safe removal with config preservation options
-- **libexec/ccblocks-daemon.sh** - Executes the Claude CLI trigger (`printf '.' | claude`)
+- **libexec/ccblocks-daemon.sh** - Verifies subscription auth and executes the Claude CLI Haiku trigger
 - **dev/coverage.sh** - Test coverage analysis and reporting tool
 - **libexec/lib/launchagent-helper.sh** / **libexec/lib/systemd-helper.sh** - Platform-specific scheduler management
 - **libexec/lib/common.sh** - Shared functions for OS detection, logging, error handling, validation
