@@ -28,4 +28,5 @@ validate: lint test
 install-deps:
 	@command -v brew >/dev/null 2>&1 || { echo "Error: Homebrew not found. Install from https://brew.sh"; exit 1; }
 	brew tap bats-core/bats-core
+	brew trust bats-core/bats-core 2>/dev/null || true
 	brew install bats-core bats-support bats-assert shellcheck shfmt
