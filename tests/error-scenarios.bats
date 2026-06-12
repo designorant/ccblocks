@@ -227,6 +227,19 @@ EOF
     refute [ -f "$calls_file" ]
 }
 
+@test "setup continues with a warning when Claude reports the session limit" {
+    export CCBLOCKS_CONFIG="${TEST_TEMP_DIR}/.config/ccblocks"
+    mkdir -p "$CCBLOCKS_CONFIG"
+    mock_claude_with_auth "$(claude_auth_json)" "
+echo \"You've hit your session limit · resets 1:40am (Europe/London)\" >&2
+exit 1"
+
+    run bash -c "printf '1\nn\n' | '${PROJECT_ROOT}/libexec/bin/setup.sh'"
+    assert_success
+    assert_output --partial "Setup will continue"
+    assert_output --partial "Setup cancelled"
+}
+
 @test "setup tests Claude with haiku print-mode trigger" {
     export CCBLOCKS_CONFIG="${TEST_TEMP_DIR}/.config/ccblocks"
     mkdir -p "$CCBLOCKS_CONFIG"

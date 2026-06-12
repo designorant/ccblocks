@@ -48,7 +48,9 @@ check_claude_cli() {
 	# Test Claude CLI (quick test)
 	local test_output=""
 	if ! test_output=$(run_claude_subscription_trigger "$claude_bin" 2>&1); then
-		if echo "$test_output" | grep -qi "session limit reached"; then
+		# Matches both "Session limit reached" (older CLI) and
+		# "You've hit your session limit · resets ..." (current CLI)
+		if echo "$test_output" | grep -qi "session limit"; then
 			print_warning "Claude CLI responded with a session limit message. Setup will continue, but scheduled triggers will wait until the limit resets."
 		else
 			print_error "Claude CLI test failed. Please ensure you're authenticated:"
