@@ -63,6 +63,11 @@ teardown() {
 	assert_line --index 1 --partial 'ref: ${{ github.event.workflow_run.head_sha }}'
 }
 
+@test "publish workflow releases only when the version tag is missing" {
+	run grep -F "if: needs.validate.outputs.tag_exists == 'false'" "$PUBLISH_WORKFLOW"
+	assert_success
+}
+
 @test "publish workflow validates VERSION before publishing" {
 	run grep -Eq '^[[:space:]]+VERSION_REGEX=' "$PUBLISH_WORKFLOW"
 	assert_success
