@@ -77,6 +77,9 @@ Description=ccblocks Scheduling Timer (%i)
 [Timer]
 OnCalendar=$oncalendar
 Persistent=true
+
+[Install]
+WantedBy=timers.target
 EOF
 
 	print_status "Created systemd service and timer files"
@@ -116,6 +119,9 @@ Description=ccblocks Scheduling Timer (%i)
 [Timer]
 OnCalendar=$oncalendar
 Persistent=true
+
+[Install]
+WantedBy=timers.target
 EOF
 
 	print_status "Created custom systemd service and timer files"
