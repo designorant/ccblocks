@@ -63,9 +63,24 @@ teardown() {
 	assert_line --index 1 --partial 'ref: ${{ github.event.workflow_run.head_sha }}'
 }
 
-@test "publish workflow releases only when the version tag is missing" {
-	run grep -F "if: needs.validate.outputs.tag_exists == 'false'" "$PUBLISH_WORKFLOW"
+@test "publish job self-heals: runs when the tag is missing or the tap is behind" {
+	run grep -F "if: needs.validate.outputs.tag_exists == 'false' || needs.validate.outputs.tap_behind == 'true'" "$PUBLISH_WORKFLOW"
 	assert_success
+}
+
+@test "publish workflow trusts the tap before bumping the formula" {
+	# Homebrew 6 refuses untrusted taps; the bump must be preceded by a trust step.
+	run grep -Eq '^[[:space:]]+brew trust designorant/tap' "$PUBLISH_WORKFLOW"
+	assert_success
+
+	trust_line=$(grep -nF 'brew trust designorant/tap' "$PUBLISH_WORKFLOW" | head -1 | cut -d: -f1)
+	bump_line=$(grep -nF 'dawidd6/action-homebrew-bump-formula' "$PUBLISH_WORKFLOW" | head -1 | cut -d: -f1)
+	[ "$trust_line" -lt "$bump_line" ]
+}
+
+@test "publish workflow does not use the deprecated tap-trust bypass" {
+	run grep -F 'HOMEBREW_NO_REQUIRE_TAP_TRUST' "$PUBLISH_WORKFLOW"
+	assert_failure
 }
 
 @test "publish workflow validates VERSION before publishing" {

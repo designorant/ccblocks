@@ -21,6 +21,7 @@ jobs:
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       tag_exists: ${{ steps.check_tag.outputs.exists }}
+      tap_behind: ${{ steps.check_tap.outputs.behind }}
 
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -58,10 +59,33 @@ jobs:
             echo "Tag v${VERSION} does not exist"
           fi
 
+      # Reconcile the Homebrew tap independently of tag creation, so a
+      # failed bump self-heals on the next run even though the tag exists.
+      - name: Check if the Homebrew tap is behind
+        id: check_tap
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAP_VERSION=$(gh api repos/designorant/homebrew-tap/contents/Formula/ccblocks.rb \
+            --jq '.content' 2>/dev/null | base64 -d 2>/dev/null \
+            | sed -n 's|.*/archive/refs/tags/v\([0-9][0-9A-Za-z.-]*\)\.tar\.gz.*|\1|p' | head -1)
+          echo "Tap formula version: ${TAP_VERSION:-unknown}"
+
+          if [ "$TAP_VERSION" != "$VERSION" ]; then
+            echo "behind=true" >> "$GITHUB_OUTPUT"
+            echo "Tap is behind (tap=${TAP_VERSION:-unknown}, target=$VERSION)"
+          else
+            echo "behind=false" >> "$GITHUB_OUTPUT"
+            echo "Tap is up to date at $VERSION"
+          fi
+
   release:
     name: Publish
     needs: validate
-    if: needs.validate.outputs.tag_exists == 'false'
+    # Tag/release creation is gated per-step on a missing tag; the tap bump
+    # is gated on the tap being behind. Run the job if either is needed.
+    if: needs.validate.outputs.tag_exists == 'false' || needs.validate.outputs.tap_behind == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -73,6 +97,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Generate changelog
+        if: needs.validate.outputs.tag_exists == 'false'
         id: changelog
         env:
           VERSION: ${{ needs.validate.outputs.version }}
@@ -97,6 +122,7 @@ jobs:
           cat changelog.md
 
       - name: Create and push tag
+        if: needs.validate.outputs.tag_exists == 'false'
         env:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
@@ -113,6 +139,7 @@ jobs:
           fi
 
       - name: Create GitHub release
+        if: needs.validate.outputs.tag_exists == 'false'
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: v${{ needs.validate.outputs.version }}
@@ -123,7 +150,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Homebrew 6 refuses to evaluate formulae from untrusted third-party
+      # taps. Trust persists in ~/.homebrew/trust.json for the rest of the
+      # job, so the bump action's internal brew calls inherit it.
+      - name: Trust the Homebrew tap
+        if: needs.validate.outputs.tap_behind == 'true'
+        run: |
+          brew tap designorant/tap
+          brew trust designorant/tap 2>/dev/null || true
+
       - name: Publish to Homebrew tap
+        if: needs.validate.outputs.tap_behind == 'true'
         uses: dawidd6/action-homebrew-bump-formula@1446dca236b0440c6f02723a3f14f13be2c04ab0 # v7
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -132,6 +169,7 @@ jobs:
           tag: v${{ needs.validate.outputs.version }}
 
       - name: Auto-merge Homebrew tap PR
+        if: needs.validate.outputs.tap_behind == 'true'
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           VERSION: ${{ needs.validate.outputs.version }}
