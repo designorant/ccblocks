@@ -61,6 +61,8 @@ brew install designorant/tap/ccblocks
 ccblocks setup
 ```
 
+> **Homebrew 6 note:** the fully-qualified `brew install designorant/tap/ccblocks` automatically trusts the formula. If you later see an `untrusted tap` warning (for example on `brew upgrade`), trust the tap once with `brew trust designorant/tap`.
+
 ### Path to Official Homebrew
 
 ccblocks is currently distributed via a [personal Homebrew tap](https://github.com/designorant/homebrew-tap/blob/master/Formula/ccblocks.rb). Once the project reaches sufficient popularity, it will be submitted to the official Homebrew repository for easier installation (just `brew install ccblocks`).
